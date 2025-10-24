@@ -4,3 +4,6 @@
 *.ipr
 .idea/
 *.xml
+
+# Ignore test.py scripts
+test.py
