@@ -15,7 +15,7 @@ def get_tickers():
     """
     try:
         # Method 1: Fetch from NSE India website
-        print("Fetching NIFTY 500 constituents from NSE India...")
+        print("Fetching NIFTY 50 constituents from NSE India...")
         url = "https://www.niftyindices.com/IndexConstituent/ind_nifty50list.csv"
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -73,7 +73,17 @@ def get_ohlcv_data(tickers, period="max", interval="1d"):
     Saves the data to 'ohlcv_data.csv'.
     """
     print(f"Fetching OHLCV data for {len(tickers)} tickers...")
-    data = yf.download(tickers, period=period, interval=interval, group_by='ticker', threads=True)
+    data = pd.DataFrame()
+
+    for ticker in tickers:
+        print(f"Fetching data for {ticker}...")
+        stock_data = yf.download(ticker, period=period, interval=interval, multi_level_index=False)
+        stock_data['Ticker'] = ticker
+        data = pd.concat([data, stock_data])
+
+    # Drop Adjusted Close if exists
+    if 'Adj Close' in data.columns:
+        data = data.drop(columns=['Adj Close'])
 
     # Save to CSV
     data.to_csv("ohlcv_data.csv")
