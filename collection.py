@@ -7,6 +7,7 @@ import pandas as pd
 import requests
 from io import StringIO
 
+
 def get_tickers():
     """
     Retrieve all tickers in NIFTY 500 automatically.
@@ -15,8 +16,8 @@ def get_tickers():
     """
     try:
         # Method 1: Fetch from NSE India website
-        print("Fetching NIFTY 50 constituents from NSE India...")
-        url = "https://www.niftyindices.com/IndexConstituent/ind_nifty50list.csv"
+        print("Fetching NIFTY 200 constituents from NSE India...")
+        url = "https://www.niftyindices.com/IndexConstituent/ind_nifty200list.csv"
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
@@ -61,12 +62,13 @@ def get_tickers():
             print("Please install required packages: pip install requests lxml html5lib")
             raise Exception("Failed to fetch tickers from all sources")
 
-def get_ohlcv_data(tickers, period="max", interval="1d"):
+def get_ohlcv_data(tickers, start_date, end_date, interval="1d"):
     """
     Fetch OHLCV data for given tickers using yfinance.
     Args:
         tickers (list): List of ticker symbols.
-        period (str): Data period to fetch.
+        start_date (str): Start date in 'YYYY-MM-DD' format.
+        end_date (str): End date in 'YYYY-MM-DD' format.
         interval (str): Data interval.
     Returns:
         pd.DataFrame: DataFrame containing OHLCV data in multi-index format.
@@ -77,7 +79,7 @@ def get_ohlcv_data(tickers, period="max", interval="1d"):
 
     for ticker in tickers:
         print(f"Fetching data for {ticker}...")
-        stock_data = yf.download(ticker, period=period, interval=interval, multi_level_index=False)
+        stock_data = yf.download(ticker, start=start_date, end=end_date, interval=interval, multi_level_index=False)
         stock_data['Ticker'] = ticker
         data = pd.concat([data, stock_data])
 
@@ -85,15 +87,44 @@ def get_ohlcv_data(tickers, period="max", interval="1d"):
     if 'Adj Close' in data.columns:
         data = data.drop(columns=['Adj Close'])
 
+    # Set multi-index
+    data.index.name = 'Date'
+    data = data.set_index('Ticker', append=True)
+    data = data.reorder_levels(['Ticker', 'Date'])
+
+    # Filter out tickers with insufficient data
+    bust_tickers = filter_tickers(data, min_start_date="2009-02-01")
+    data = data.drop(index=bust_tickers, level='Ticker')
+
     # Save to CSV
     data.to_csv("ohlcv_data.csv")
     print("OHLCV data saved to 'ohlcv_data.csv'")
 
     return data
 
+def filter_tickers(data, min_start_date="2009-02-01"):
+    """
+    Filter tickers based on minimum start date.
+    Args:
+        data (pd.DataFrame): Multi-index DataFrame with OHLCV data.
+        min_start_date (str): Minimum start date in 'YYYY-MM-DD' format.
+    Returns:
+        list: List of tickers that do not meet the criteria.
+    """
+    bust_tickers = []
+    grouped = data.groupby(level='Ticker')
+
+    for ticker, group in grouped:
+        min_date = group.index.get_level_values('Date').min()
+        if min_date > pd.to_datetime(min_start_date):
+            bust_tickers.append(ticker)
+
+    print(f"Total tickers with min date after {min_start_date}: {len(bust_tickers)}")
+    return bust_tickers
+
 if __name__ == "__main__":
 
     tickers = get_tickers()
 
-    ohlcv_data = get_ohlcv_data(tickers)
+    ohlcv_data = get_ohlcv_data(tickers, start_date="2009-01-01", end_date="2025-01-01", interval="1d")
 
