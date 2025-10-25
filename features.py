@@ -44,13 +44,16 @@ def add_execution_price(df, spread_coeff=0.1, sigma_noise=0.01):
         pd.DataFrame: DataFrame with added execution price.
     """
 
-    df['mid'] = (df['High'] + df['Low']) / 2
-    df['spread_est'] = spread_coeff * (df['High'] - df['Low']) / df['mid']
+    df['Mid'] = (df['High'] + df['Low']) / 2
+    df['Spread_est'] = spread_coeff * (df['High'] - df['Low']) / df['Mid']
 
     np.random.seed(42)  # For reproducibility
     noise = np.random.normal(0, sigma_noise, size=len(df))
 
-    df['execution_price'] = df['mid'] + (df['spread_est'] / 2) + noise
-    df['execution_price'] = df['execution_price'].clip(lower=0)
+    df['Execution Price'] = df['Mid'] + (df['Spread_est'] / 2) + noise
+    df['Execution Price'] = df['Execution Price'].clip(lower=0)
+
+    # Drop intermediate columns
+    df = df.drop(columns=['Mid', 'Spread_est'])
 
     return df
