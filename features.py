@@ -57,3 +57,20 @@ def add_execution_price(df, spread_coeff=0.1, sigma_noise=0.01):
     df = df.drop(columns=['Mid', 'Spread_est'])
 
     return df
+
+def get_features(file_path):
+    """
+    Load OHLCV data and add technical indicators and execution price.
+    Args:
+        file_path (str): Path to the CSV file.
+    Returns:
+        pd.DataFrame: DataFrame with technical indicators and execution price.
+    Saves the data to 'features.csv'.
+    """
+
+    df = load_ohlcv_data(file_path)
+    df = add_technical_indicators(df)
+    df = add_execution_price(df)
+    df.to_csv("features.csv")
+    print("Features data saved to 'features.csv'")
+    return df
