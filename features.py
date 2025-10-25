@@ -29,7 +29,7 @@ def add_technical_indicators(df):
 
     pass
 
-def add_execution_price(df, spread_coeff=0.1, sigma_noise=0.01):
+def add_execution_price(df, spread_coeff=0.1, sigma_noise=0.005):
     """
     Add execution price to the OHLCV DataFrame.
     There are two components to the execution price:
