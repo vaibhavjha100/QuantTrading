@@ -171,8 +171,10 @@ def add_technical_indicators(df):
 
     # Directional Movement Index (DMI)
 
-    df['DMI14'] = ta.trend.dmi(df['High'], df['Low'], df['Close'], window=14)
-    df['DMI20'] = ta.trend.dmi(df['High'], df['Low'], df['Close'], window=20)
+    df['DMI14_Pos'] = ta.trend.adx_pos(df['High'], df['Low'], df['Close'], window=14)
+    df['DMI14_Neg'] = ta.trend.adx_neg(df['High'], df['Low'], df['Close'], window=14)
+    df['DMI20_Pos'] = ta.trend.adx_pos(df['High'], df['Low'], df['Close'], window=20)
+    df['DMI20_Neg'] = ta.trend.adx_neg(df['High'], df['Low'], df['Close'], window=20)
 
     # Parabolic SAR
 
@@ -261,8 +263,8 @@ def add_technical_indicators(df):
 
     # Standard Deviation
 
-    df['STD20'] = ta.volatility.stdev(df['Close'], window=20)
-    df['STD50'] = ta.volatility.stdev(df['Close'], window=50)
+    df['STD20'] = df['Close'].rolling(window=20).std()
+    df['STD50'] = df['Close'].rolling(window=50).std()
 
     # Volume Indicators
 
@@ -281,13 +283,14 @@ def add_technical_indicators(df):
 
     # Volume Oscillator
 
-    df['Volume_Oscillator_5_28'] = ta.volume.volume_oscillator(df['Volume'], window_slow=28, window_fast=5)
-    df['Volume_Oscillator_14_50'] = ta.volume.volume_oscillator(df['Volume'], window_slow=50, window_fast=14)
+    df['Volume_Oscillator_5_28'] = ((df['Volume'].rolling(window=5).mean() - df['Volume'].rolling(window=28).mean()) /
+                                    df['Volume'].rolling(window=28).mean()) * 100
+    df['Volume_Oscillator_14_50'] = ((df['Volume'].rolling(window=14).mean() - df['Volume'].rolling(window=50).mean()) /
+                                     df['Volume'].rolling(window=50).mean()) * 100
 
     # Price Volume Trend (PVT)
 
-    df['PVT'] = ta.volume.price_volume_trend(df['Close'], df['Volume'])
-
+    df['PVT'] = (df['Close'].pct_change() * df['Volume']).cumsum()
     # Support/Resistance
 
     # Fibonacci Retracement
