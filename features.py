@@ -233,16 +233,16 @@ def add_technical_indicators(df):
 
     # Keltner Channel (Both upper and lower bands are added)
 
-    keltner_15_10_1__5 = ta.volatility.KeltnerChannel(df['High'], df['Low'], df['Close'], window=15, window_atr=10, fillna=False)
+    keltner_15_10_1__5 = ta.volatility.KeltnerChannel(df['High'], df['Low'], df['Close'], window=15, window_atr=10, multiplier=1.5, fillna=False)
     df['Keltner_15_10_1.5_Upper'] = keltner_15_10_1__5.keltner_channel_hband()
     df['Keltner_15_10_1.5_Lower'] = keltner_15_10_1__5.keltner_channel_lband()
-    keltner_20_14_2 = ta.volatility.KeltnerChannel(df['High'], df['Low'], df['Close'], window=20, window_atr=14, fillna=False)
+    keltner_20_14_2 = ta.volatility.KeltnerChannel(df['High'], df['Low'], df['Close'], window=20, window_atr=14, multiplier=1.5, fillna=False)
     df['Keltner_20_14_2_Upper'] = keltner_20_14_2.keltner_channel_hband()
     df['Keltner_20_14_2_Lower'] = keltner_20_14_2.keltner_channel_lband()
-    keltner_20_20_2 = ta.volatility.KeltnerChannel(df['High'], df['Low'], df['Close'], window=20, window_atr=20, fillna=False)
+    keltner_20_20_2 = ta.volatility.KeltnerChannel(df['High'], df['Low'], df['Close'], window=20, window_atr=20, multiplier=1.5, fillna=False)
     df['Keltner_20_20_2_Upper'] = keltner_20_20_2.keltner_channel_hband()
     df['Keltner_20_20_2_Lower'] = keltner_20_20_2.keltner_channel_lband()
-    keltner_30_21_2__5 = ta.volatility.KeltnerChannel(df['High'], df['Low'], df['Close'], window=30, window_atr=21, fillna=False)
+    keltner_30_21_2__5 = ta.volatility.KeltnerChannel(df['High'], df['Low'], df['Close'], window=30, window_atr=21, multiplier=1.5, fillna=False)
     df['Keltner_30_21_2.5_Upper'] = keltner_30_21_2__5.keltner_channel_hband()
     df['Keltner_30_21_2.5_Lower'] = keltner_30_21_2__5.keltner_channel_lband()
 
@@ -294,7 +294,100 @@ def add_technical_indicators(df):
     # Support/Resistance
 
     # Fibonacci Retracement
-    # To be added
+
+    # High point and low point for Fibonacci levels
+
+    high = df['High'].rolling(window=50).max()
+    low = df['Low'].rolling(window=50).min()
+
+    df['Fibonacci_23__6%'] = high - 0.236 * (high - low)
+    df['Fibonacci_38__2%'] = high - 0.382 * (high - low)
+    df['Fibonacci_50%'] = high - 0.5 * (high - low)
+    df['Fibonacci_61__8%'] = high - 0.618 * (high - low)
+    df['Fibonacci_78__6%'] = high - 0.786 * (high - low)
+
+    # Fibonacci Extension
+
+    df['Fibonacci_100%'] = high + (high - low)
+    df['Fibonacci_127__2%'] = high + 1.272 * (high - low)
+    df['Fibonacci_161__8%'] = high + 1.618 * (high - low)
+    df['Fibonacci_200%'] = high + 2 * (high - low)
+    df['Fibonacci_261__8%'] = high + 2.618 * (high - low)
+
+    # Pivot Points (Standard)
+
+    pivot = (df['High'] + df['Low'] + df['Close']) / 3
+    df['Pivot_Point'] = pivot
+    df['Pivot_R1'] = 2 * pivot - df['Low']
+    df['Pivot_S1'] = 2 * pivot - df['High']
+    df['Pivot_R2'] = pivot + (df['High'] - df['Low'])
+    df['Pivot_S2'] = pivot - (df['High'] - df['Low'])
+    df['Pivot_R3'] = df['High'] + 2 * (pivot - df['Low'])
+    df['Pivot_S3'] = df['Low'] - 2 * (df['High'] - pivot)
+
+    # Pivot Points (Fibonacci)
+
+    df['Pivot_Fib_R1'] = pivot + 0.382 * (df['High'] - df['Low'])
+    df['Pivot_Fib_S1'] = pivot - 0.382 * (df['High'] - df['Low'])
+    df['Pivot_Fib_R2'] = pivot + 0.618 * (df['High'] - df['Low'])
+    df['Pivot_Fib_S2'] = pivot - 0.618 * (df['High'] - df['Low'])
+    df['Pivot_Fib_R3'] = pivot + (df['High'] - df['Low'])
+    df['Pivot_Fib_S3'] = pivot - (df['High'] - df['Low'])
+
+    # Pivot Points (Camarilla)
+
+    df['Pivot_Camarilla_R1'] = df['Close'] + (df['High'] - df['Low']) * 1.1 / 12
+    df['Pivot_Camarilla_S1'] = df['Close'] - (df['High'] - df['Low']) * 1.1 / 12
+    df['Pivot_Camarilla_R2'] = df['Close'] + (df['High'] - df['Low']) * 1.1 / 6
+    df['Pivot_Camarilla_S2'] = df['Close'] - (df['High'] - df['Low']) * 1.1 / 6
+    df['Pivot_Camarilla_R3'] = df['Close'] + (df['High'] - df['Low']) * 1.1 / 4
+    df['Pivot_Camarilla_S3'] = df['Close'] - (df['High'] - df['Low']) * 1.1 / 4
+    df['Pivot_Camarilla_R4'] = df['Close'] + (df['High'] - df['Low']) * 1.1 / 2
+    df['Pivot_Camarilla_S4'] = df['Close'] - (df['High'] - df['Low']) * 1.1 / 2
+
+    # Pivot Points (Woodie)
+
+    df['Pivot_Woodie'] = (df['High'] + df['Low'] + 2 * df['Close']) / 4
+    df['Pivot_Woodie_R1'] = 2 * df['Pivot_Woodie'] - df['Low']
+    df['Pivot_Woodie_S1'] = 2 * df['Pivot_Woodie'] - df['High']
+    df['Pivot_Woodie_R2'] = df['Pivot_Woodie'] + (df['High'] - df['Low'])
+    df['Pivot_Woodie_S2'] = df['Pivot_Woodie'] - (df['High'] - df['Low'])
+
+    # Other Indicators
+
+    # TRIX
+
+    df['TRIX12'] = ta.trend.trix(df['Close'], window=12)
+    df['TRIX15'] = ta.trend.trix(df['Close'], window=15)
+    df['TRIX20'] = ta.trend.trix(df['Close'], window=20)
+
+    # Ultimate Oscillator
+
+    df['Ultimate_Oscillator'] = ta.momentum.ultimate_oscillator(df['High'], df['Low'], df['Close'], window1=7, window2=14, window3=28)
+
+    # Elder Ray Index
+
+    df['Elder_Ray_Bull'] = ta.trend.ema_indicator(df['Close'], window=13) - df['Low']
+    df['Elder_Ray_Bear'] = df['High'] - ta.trend.ema_indicator(df['Close'], window=13)
+
+    # Detrended Price Oscillator
+
+    df['DPO20'] = ta.trend.dpo(df['Close'], window=20)
+
+    # Envelope (Both upper and lower bands are added)
+
+    envelope_20_2 = ta.trend.EnvelopeIndicator(df['Close'], window=20, percent=0.02)
+    df['Envelope_20_2_Upper'] = envelope_20_2.envelope_hband()
+    df['Envelope_20_2_Lower'] = envelope_20_2.envelope_lband()
+    envelope_50_5 = ta.trend.EnvelopeIndicator(df['Close'], window=50, percent=0.05)
+    df['Envelope_50_5_Upper'] = envelope_50_5.envelope_hband()
+    df['Envelope_50_5_Lower'] = envelope_50_5.envelope_lband()
+
+    # Ease of Movement
+
+    df['Ease_of_Movement14'] = ta.volume.ease_of_movement(df['High'], df['Low'], df['Volume'], window=14)
+
+    return df
 
 
 
