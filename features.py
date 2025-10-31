@@ -5,6 +5,8 @@ Module for creating technical features and execution price for OHLCV data.
 import pandas as pd
 import ta
 import numpy as np
+import warnings
+warnings.filterwarnings("ignore")
 
 def load_ohlcv_data(file_path):
     """
@@ -18,6 +20,23 @@ def load_ohlcv_data(file_path):
     df = pd.read_csv("ohlcv_data.csv", index_col=[1, 0])
     return df
 
+def hull_moving_average(series, window):
+    """
+    Calculate Hull Moving Average (HMA) for a given series and window.
+    Parameters:
+        series (pd.Series): Input data series.
+        window (int): Window size for HMA calculation.
+    Returns:
+        pd.Series: HMA values.
+    """
+    half_length = int(window / 2)
+    sqrt_length = int(window**0.5)
+    wma_half = series.rolling(window=half_length).mean()
+    wma_full = series.rolling(window=window).mean()
+    diff = 2 * wma_half - wma_full
+    hma = diff.rolling(window=sqrt_length).mean()
+    return hma
+
 def add_technical_indicators(df):
     """
     Add technical indicators to the OHLCV DataFrame.
@@ -28,10 +47,10 @@ def add_technical_indicators(df):
     SMA5, SMA10, SMA20, SMA21, SMA30, SMA50, SMA100, SMA200 | EMA5, EMA9, EMA10, EMA12, EMA20, EMA21, EMA26, EMA50, EMA200 | WMA10, WMA20, WMA50 | HMA9, HMA16, HMA20 | VWAP (intraday/daily)
 
     Momentum Oscillators
-    RSI9, RSI14, RSI21, RSI25 | Stochastic (5,3,3), (9,3,2), (14,3,3), (14,5,3), (21,5,3), (21,9,3) | Williams %R9, %R14, %R21 | CCI5, CCI14, CCI20, CCI30, CCI50 | MFI14, MFI20 | ROC10, ROC12, ROC25 | Stochastic RSI14, RSI21 | Momentum10, Momentum14, Momentum20
+    RSI9, RSI14, RSI21, RSI25 | Stochastic (5,3,3), (9,3,2), (14,3,3), (14,5,3), (21,5,3), (21,9,3) | Williams %R9, %R14, %R21 | CCI5, CCI14, CCI20, CCI30, CCI50 | MFI14, MFI20 | ROC10, ROC12, ROC25 | Stochastic RSI14, RSI21
 
     Trend Indicators
-    MACD (5,13,8), (8,17,9), (8,21,5), (12,26,9), (13,30,10), (19,39,9) | ADX7, ADX14, ADX20, ADX28 | DMI14, DMI20 | Parabolic SAR (0.01/0.1), (0.015/0.15), (0.02/0.2), (0.025/0.25) | Supertrend ATR10/M2, ATR10/M2.5, ATR10/M3, ATR14/M3, ATR20/M4 | Aroon14, Aroon25 | Ichimoku (9,26,52), (6,13,26), (10,30,60)
+    MACD (5,13,8), (8,17,9), (8,21,5), (12,26,9), (13,30,10), (19,39,9) | ADX7, ADX14, ADX20, ADX28 | DMI14, DMI20 | Parabolic SAR (0.01/0.1), (0.015/0.15), (0.02/0.2), (0.025/0.25) | Aroon14, Aroon25 | Ichimoku (9,26,52), (6,13,26), (10,30,60)
 
     Volatility Indicators
     Bollinger Bands (10,1.5), (14,2), (20,2), (50,2.5) | ATR10, ATR14, ATR20, ATR21 | Keltner Channel (15,10,1.5), (20,14,2), (20,20,2), (30,21,2.5) | Donchian 10, 20, 50, 55 | Standard Deviation 20, 50
@@ -43,13 +62,15 @@ def add_technical_indicators(df):
     Fibonacci Retracement (23.6%, 38.2%, 50%, 61.8%, 78.6%) | Fibonacci Extension (100%, 127.2%, 161.8%, 200%, 261.8%) | Pivot Points (Standard, Fibonacci, Camarilla, Woodie)
 
     Other Indicators
-    TRIX12, TRIX15, TRIX20 | Ultimate Oscillator (7,14,28) | Elder Ray13 | Detrended Price Oscillator20 | Envelope (20/2%, 50/5%) | Ease of Movement14
+    TRIX12, TRIX15, TRIX20 | Ultimate Oscillator (7,14,28) | Elder Ray13 | Detrended Price Oscillator20 | Ease of Movement14
 
     Args:
         df (pd.DataFrame): Multi-index DataFrame with OHLCV data.
     Returns:
         pd.DataFrame: DataFrame with added technical indicators.
     """
+
+    df = df.copy()
 
     # Moving Averages
 
@@ -84,9 +105,9 @@ def add_technical_indicators(df):
 
     # Hull Moving Averages (HMA)
 
-    df['HMA9'] = ta.trend.hull_moving_average(df['Close'], window=9)
-    df['HMA16'] = ta.trend.hull_moving_average(df['Close'], window=16)
-    df['HMA20'] = ta.trend.hull_moving_average(df['Close'], window=20)
+    df['HMA9'] = hull_moving_average(df['Close'], window=9)
+    df['HMA16'] = hull_moving_average(df['Close'], window=16)
+    df['HMA20'] = hull_moving_average(df['Close'], window=20)
 
     # Volume Weighted Average Price (VWAP)
     df['VWAP'] = ta.volume.volume_weighted_average_price(df['High'], df['Low'], df['Close'], df['Volume'])
@@ -139,12 +160,6 @@ def add_technical_indicators(df):
     df['Stochastic_RSI14'] = ta.momentum.stochrsi(df['Close'], window=14)
     df['Stochastic_RSI21'] = ta.momentum.stochrsi(df['Close'], window=21)
 
-    # Momentum
-
-    df['Momentum10'] = ta.momentum.momentum(df['Close'], window=10)
-    df['Momentum14'] = ta.momentum.momentum(df['Close'], window=14)
-    df['Momentum20'] = ta.momentum.momentum(df['Close'], window=20)
-
     # Trend Indicators
 
     # Moving Average Convergence Divergence (MACD)
@@ -178,23 +193,19 @@ def add_technical_indicators(df):
 
     # Parabolic SAR
 
-    df['Parabolic_SAR_0.01_0.1'] = ta.trend.psar(df['High'], df['Low'], df['Close'], step=0.01, max_step=0.1)
-    df['Parabolic_SAR_0.015_0.15'] = ta.trend.psar(df['High'], df['Low'], df['Close'], step=0.015, max_step=0.15)
-    df['Parabolic_SAR_0.02_0.2'] = ta.trend.psar(df['High'], df['Low'], df['Close'], step=0.02, max_step=0.2)
-    df['Parabolic_SAR_0.025_0.25'] = ta.trend.psar(df['High'], df['Low'], df['Close'], step=0.025, max_step=0.25)
-
-    # Supertrend (Using ATR)
-
-    df['Supertrend_ATR10_M2'] = ta.trend.supertrend(df['High'], df['Low'], df['Close'], window=10, multiplier=2)
-    df['Supertrend_ATR10_M2.5'] = ta.trend.supertrend(df['High'], df['Low'], df['Close'], window=10, multiplier=2.5)
-    df['Supertrend_ATR10_M3'] = ta.trend.supertrend(df['High'], df['Low'], df['Close'], window=10, multiplier=3)
-    df['Supertrend_ATR14_M3'] = ta.trend.supertrend(df['High'], df['Low'], df['Close'], window=14, multiplier=3)
-    df['Supertrend_ATR20_M4'] = ta.trend.supertrend(df['High'], df['Low'], df['Close'], window=20, multiplier=4)
+    psar_001_0_1 = ta.trend.PSARIndicator(df['High'], df['Low'], df['Close'], step=0.01, max_step=0.1)
+    df['Parabolic_SAR_0.01_0.1'] = psar_001_0_1.psar()
+    psar_0015_0_15 = ta.trend.PSARIndicator(df['High'], df['Low'], df['Close'], step=0.015, max_step=0.15)
+    df['Parabolic_SAR_0.015_0.15'] = psar_0015_0_15.psar()
+    psar_002_0_2 = ta.trend.PSARIndicator(df['High'], df['Low'], df['Close'], step=0.02, max_step=0.2)
+    df['Parabolic_SAR_0.02_0.2'] = psar_002_0_2.psar()
+    psar_0025_0_25 = ta.trend.PSARIndicator(df['High'], df['Low'], df['Close'], step=0.025, max_step=0.25)
+    df['Parabolic_SAR_0.025_0.25'] = psar_0025_0_25.psar()
 
     # Aroon Indicator
 
-    df['Aroon14'] = ta.trend.aroon_up(df['Close'], window=14) - ta.trend.aroon_down(df['Close'], window=14)
-    df['Aroon25'] = ta.trend.aroon_up(df['Close'], window=25) - ta.trend.aroon_down(df['Close'], window=25)
+    df['Aroon14'] = ta.trend.aroon_up(df['High'], df['Low'], window=14) - ta.trend.aroon_down(df['High'], df['Low'], window=14)
+    df['Aroon25'] = ta.trend.aroon_up(df['High'], df['Low'], window=25) - ta.trend.aroon_down(df['High'], df['Low'], window=25)
 
     # Ichimoku
 
@@ -248,16 +259,16 @@ def add_technical_indicators(df):
 
     # Donchian Channel (Both upper and lower bands are added)
 
-    donchian_10 = ta.volatility.DonchianChannel(df['High'], df['Low'], window=10)
+    donchian_10 = ta.volatility.DonchianChannel(df['High'], df['Low'], df['Close'], window=10)
     df['Donchian_10_Upper'] = donchian_10.donchian_channel_hband()
     df['Donchian_10_Lower'] = donchian_10.donchian_channel_lband()
-    donchian_20 = ta.volatility.DonchianChannel(df['High'], df['Low'], window=20)
+    donchian_20 = ta.volatility.DonchianChannel(df['High'], df['Low'], df['Close'], window=20)
     df['Donchian_20_Upper'] = donchian_20.donchian_channel_hband()
     df['Donchian_20_Lower'] = donchian_20.donchian_channel_lband()
-    donchian_50 = ta.volatility.DonchianChannel(df['High'], df['Low'], window=50)
+    donchian_50 = ta.volatility.DonchianChannel(df['High'], df['Low'], df['Close'], window=50)
     df['Donchian_50_Upper'] = donchian_50.donchian_channel_hband()
     df['Donchian_50_Lower'] = donchian_50.donchian_channel_lband()
-    donchian_55 = ta.volatility.DonchianChannel(df['High'], df['Low'], window=55)
+    donchian_55 = ta.volatility.DonchianChannel(df['High'], df['Low'], df['Close'], window=55)
     df['Donchian_55_Upper'] = donchian_55.donchian_channel_hband()
     df['Donchian_55_Lower'] = donchian_55.donchian_channel_lband()
 
@@ -374,15 +385,6 @@ def add_technical_indicators(df):
 
     df['DPO20'] = ta.trend.dpo(df['Close'], window=20)
 
-    # Envelope (Both upper and lower bands are added)
-
-    envelope_20_2 = ta.trend.EnvelopeIndicator(df['Close'], window=20, percent=0.02)
-    df['Envelope_20_2_Upper'] = envelope_20_2.envelope_hband()
-    df['Envelope_20_2_Lower'] = envelope_20_2.envelope_lband()
-    envelope_50_5 = ta.trend.EnvelopeIndicator(df['Close'], window=50, percent=0.05)
-    df['Envelope_50_5_Upper'] = envelope_50_5.envelope_hband()
-    df['Envelope_50_5_Lower'] = envelope_50_5.envelope_lband()
-
     # Ease of Movement
 
     df['Ease_of_Movement14'] = ta.volume.ease_of_movement(df['High'], df['Low'], df['Volume'], window=14)
@@ -405,6 +407,8 @@ def add_execution_price(df, spread_coeff=0.1, sigma_noise=0.005):
     Returns:
         pd.DataFrame: DataFrame with added execution price.
     """
+
+    df = df.copy()
 
     df['Mid'] = (df['High'] + df['Low']) / 2
     df['Spread_est'] = spread_coeff * (df['High'] - df['Low']) / df['Mid']
@@ -431,8 +435,27 @@ def get_features(file_path):
     """
 
     df = load_ohlcv_data(file_path)
-    df = add_technical_indicators(df)
-    df = add_execution_price(df)
-    df.to_csv("features.csv")
-    print("Features data saved to 'features.csv'")
-    return df
+
+    # df is a multi-index dataframe with (symbol, datetime) as index
+    final_df = pd.DataFrame()
+    # Unique tickers
+    unique_tickers = df.index.get_level_values(1).unique()
+
+    for ticker in unique_tickers:
+        print("ticker:", ticker)
+        ticker_df = df.xs(ticker, level=1)
+        ticker_df = add_technical_indicators(ticker_df)
+        ticker_df = add_execution_price(ticker_df)
+        ticker_df['Ticker'] = ticker
+        final_df = pd.concat([final_df, ticker_df])
+
+    final_df = final_df.reset_index().set_index(['Ticker', 'Date'])
+    final_df.to_csv('features.csv')
+
+    return final_df
+
+if __name__ == "__main__":
+
+    features_df = get_features("ohlcv_data.csv")
+    print(features_df.head())
+    print(features_df.info())
