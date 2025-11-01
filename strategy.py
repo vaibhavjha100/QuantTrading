@@ -45,4 +45,127 @@ class BaseStrategy:
             'Trades' : []
         }
 
+    def reset(self):
+        """
+        Reset the strategy to initial state.
+        """
+        self.position = {ticker: 0 for ticker in self.tickers}
+        self.cash = self.initial_cash
+        self.portfolio_value = self.initial_cash
+        self.entry_prices = {ticker: 0 for ticker in self.tickers}
+        self.exit_prices = {ticker: 0 for ticker in self.tickers}
+        self.history = {
+            'Date' : [],
+            'Portfolio Value' : [],
+            'Cash' : [],
+            'Positions' : [],
+            'Trades' : []
+        }
+
+    def execute_strategy(self, train=True, allocation="equal"):
+        """
+        Execute the trading strategy on the training or testing data.
+        This provides the basic structure for executing the strategy.
+        Parameters:
+            train (bool): If True, execute on training data; otherwise, on testing data.
+            allocation (str): Allocation strategy, e.g., "equal" for equal allocation.
+        Returns:
+            None
+        Saves the trading history and portfolio value over time.
+        """
+
+        # Reset the strategy state
+        self.reset()
+
+        data = self.train_data if train else self.test_data
+        dates = self.train_dates if train else self.test_dates
+
+        for current_date in dates:
+            daily_data = data.xs(current_date, level=0)
+
+            trades = []
+            signals = []
+            for ticker in self.tickers:
+                if ticker not in daily_data.index:
+                    continue
+
+                # Execution prices
+                price = daily_data.loc[ticker]['Execution Price']
+
+                # Call the get_trade_signal method to get the trade signal
+                signal = self.get_trade_signal(ticker, current_date, data)
+
+                signals.append((ticker, signal, price))
+
+            # Execute trades based on signals
+
+            # First handle sells to free up cash
+            sell_tickers = [s for s in signals if s[1] == 'SELL']
+            buy_tickers = [s for s in signals if s[1] == 'BUY']
+            hold_tickers = [s for s in signals if s[1] == 'HOLD']
+
+            # Remove tickers from sell tickers if we have no position
+            sell_tickers = [s for s in sell_tickers if self.position[s[0]] > 0]
+
+            # Execute sells
+            if sell_tickers:
+                self.cash+= np.sum([self.position[s[0]] * s[2] * (1 - self.transaction_cost) for s in sell_tickers])
+                self.position.update({s[0]: 0 for s in sell_tickers})
+                trades.extend([(s[0], 'SELL', self.position[s[0]], s[2]) for s in sell_tickers])
+
+            # Check if it is the tax payment date
+            tax_date = utils.get_tax_date(dates, current_date)
+            if current_date == tax_date:
+                # Call the tax payment method
+                tax_payment = self.calculate_tax_payment(dates, current_date, data)
+                self.cash -= tax_payment
+
+            # Calculate available cash for buys
+            available_cash = self.cash
+
+            # Execute buys
+
+            if buy_tickers and available_cash > 0:
+                # Calculate the minimum price among buy tickers
+                min_price = min([s[2] for s in buy_tickers])
+
+                # If min_price greater than available cash, skip buys
+                if min_price > available_cash:
+                    buy_tickers = []
+                else:
+                    if allocation == "equal":
+                        allocation_per_ticker = available_cash / len(buy_tickers)
+
+                        # Remove tickers that cannot be bought with the allocated cash
+                        affordable_buy_tickers = []
+                        for s in buy_tickers:
+                            if allocation_per_ticker >= s[2]:
+                                affordable_buy_tickers.append(s)
+
+                        buy_tickers = affordable_buy_tickers
+
+                if buy_tickers:
+                    for s in buy_tickers:
+                        num_shares = int(allocation_per_ticker / s[2])
+                        cost = num_shares * s[2] * (1 + self.transaction_cost)
+                        if cost <= self.cash:
+                            self.position[s[0]] += num_shares
+                            self.cash -= cost
+                            trades.append((s[0], 'BUY', num_shares, s[2]))
+
+
+            # Update portfolio value
+            self.portfolio_value = self.cash + np.sum([self.position[ticker] * daily_data.loc[ticker]['Execution Price'] for ticker in self.tickers if ticker in daily_data.index])
+
+            # Record history
+            self.history['Date'].append(current_date)
+            self.history['Portfolio Value'].append(self.portfolio_value)
+            self.history['Cash'].append(self.cash)
+            self.history['Positions'].append(self.position.copy())
+            self.history['Trades'].append(trades)
+
+
+
+
+
 
