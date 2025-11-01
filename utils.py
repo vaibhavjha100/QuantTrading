@@ -16,7 +16,14 @@ def load_multiindex_csv(file_path):
     Returns:
     pd.DataFrame: DataFrame with multi-level index.
     """
-    return pd.read_csv(file_path, index_col=[1, 0])
+
+    df = pd.read_csv(file_path, index_col=[1, 0])
+    df.index = df.index.set_levels([pd.to_datetime(df.index.levels[0]), df.index.levels[1]])
+
+    # Sort the date index
+    df = df.sort_index(level=0)
+
+    return df
 
 def split_data(df, split_ratio=0.8):
     """
