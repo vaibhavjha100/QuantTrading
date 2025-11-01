@@ -16,3 +16,19 @@ def load_multiindex_csv(file_path):
     pd.DataFrame: DataFrame with multi-level index.
     """
     return pd.read_csv(file_path, index_col=[1, 0])
+
+def split_data(df, split_ratio=0.8):
+    """
+    Split the DataFrame into training and testing sets based on the split ratio.
+
+    Parameters:
+    df (pd.DataFrame): The input DataFrame(with multi-level index).
+    split_ratio (float): The ratio to split the data into training and testing sets.
+
+    Returns:
+    pd.DataFrame, pd.DataFrame: Training and testing DataFrames.
+    """
+    split_index = int(len(df) * split_ratio)
+    train_df = df.iloc[:split_index]
+    test_df = df.iloc[split_index:]
+    return train_df, test_df
