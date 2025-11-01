@@ -450,6 +450,10 @@ def get_features(file_path):
         final_df = pd.concat([final_df, ticker_df])
 
     final_df = final_df.reset_index().set_index(['Ticker', 'Date'])
+
+    # Drop rows with any NaN values
+    final_df = final_df.dropna()
+
     final_df.to_csv('features.csv')
 
     return final_df
