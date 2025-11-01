@@ -95,8 +95,14 @@ class BaseStrategy:
                 # Execution prices
                 price = daily_data.loc[ticker]['Execution Price']
 
+                # Slice the data to feed into the strategy
+                # Make sure that there is no lookahead bias by only using data up to the current date
+                # Data should only be for the ticker in this iteration
+                ticker_data = data.xs(ticker, level=1)
+                ticker_data_slice = ticker_data[ticker_data.index <= current_date]
+
                 # Call the get_trade_signal method to get the trade signal
-                signal = self.get_trade_signal(ticker, current_date, data)
+                signal = self.get_trade_signal(ticker_data_slice)
 
                 signals.append((ticker, signal, price))
 
@@ -120,7 +126,7 @@ class BaseStrategy:
             tax_date = utils.get_tax_date(dates, current_date)
             if current_date == tax_date:
                 # Call the tax payment method
-                tax_payment = self.calculate_tax_payment(dates, current_date, data)
+                tax_payment = self.calculate_tax_payment(dates, current_date)
                 self.cash -= tax_payment
 
             # Calculate available cash for buys
@@ -147,7 +153,8 @@ class BaseStrategy:
 
                         buy_tickers = affordable_buy_tickers
 
-                if buy_tickers:
+                if len(buy_tickers) > 0:
+                    allocation_per_ticker = available_cash / len(buy_tickers)
                     for s in buy_tickers:
                         num_shares = int(allocation_per_ticker / s[2])
                         cost = num_shares * s[2] * (1 + self.transaction_cost)
@@ -213,6 +220,19 @@ class BaseStrategy:
         tax_payment = total_profit * self.tax_rate if total_profit > 0 else 0
 
         return tax_payment
+
+    def get_trade_signal(self, df):
+        """
+        Abstract method to get trade signal for a given ticker data slice.
+        Must be implemented by subclasses.
+
+        Parameters:
+        df (pd.DataFrame): DataFrame slice for a specific ticker up to the current date.
+
+        Returns:
+        str: Trade signal ('BUY', 'SELL', 'HOLD').
+        """
+        raise NotImplementedError("Subclasses must implement this method.")
 
 
 
