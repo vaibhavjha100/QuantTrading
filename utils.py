@@ -45,3 +45,27 @@ def split_data(df, split_ratio=0.8):
     test_df = df[test_mask]
 
     return train_df, test_df
+
+def get_tax_date(dates, date):
+    """
+    Get the closest date to the next march 31st from the given date in dates.
+    If today is 01-01-2023, the next march 31st is 31-03-2023.
+    If today is 05-04-2023, the next march 31st is 31-03-2024.
+    If there is no date available after the next march 31st, return the last date in dates.
+
+    Parameters:
+    dates (pd.DatetimeIndex): The available dates.
+    date (pd.Timestamp): The reference date.
+    Returns:
+    pd.Timestamp: The closest date to the next march 31st.
+    """
+
+    year = date.year
+
+    if (date.month, date.day) > (3, 31):
+        year += 1
+    tax_date = pd.Timestamp(year=year, month=3, day=31)
+    future_dates = dates[dates >= tax_date]
+    if len(future_dates) == 0:
+        return dates[-1]
+    return future_dates[0]
