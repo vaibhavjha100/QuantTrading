@@ -28,7 +28,12 @@ def split_data(df, split_ratio=0.8):
     Returns:
     pd.DataFrame, pd.DataFrame: Training and testing DataFrames.
     """
-    split_index = int(len(df) * split_ratio)
-    train_df = df.iloc[:split_index]
-    test_df = df.iloc[split_index:]
+
+    dates = df.index.get_level_values(0).unique().sort_values()
+
+    split_date = dates[int(len(dates) * split_ratio)]
+
+    train_df = df.xs(slice(None, split_date), level=0, drop_level=False)
+    test_df = df.xs(slice(split_date, None), level=0, drop_level=False)
+
     return train_df, test_df
