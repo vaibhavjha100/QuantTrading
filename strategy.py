@@ -34,8 +34,18 @@ class BaseStrategy:
         self.portfolio_value = initial_cash
         self.entry_prices = {ticker: 0 for ticker in tickers}
         self.exit_prices = {ticker: 0 for ticker in tickers}
-        self.train_dates = train_data.index.get_level_values(0).unique().sort_values()
-        self.test_dates = test_data.index.get_level_values(0).unique().sort_values()
+
+        # Slice train and test data to only include specified tickers
+        if tickers:
+            self.train_data = train_data.loc[train_data.index.get_level_values(1).isin(tickers)]
+            self.test_data = test_data.loc[test_data.index.get_level_values(1).isin(tickers)]
+        else:
+            self.tickers = train_data.index.get_level_values(1).unique().tolist()
+
+        self.train_dates = self.train_data.index.get_level_values(0).unique().sort_values()
+
+
+        self.test_dates = self.test_data.index.get_level_values(0).unique().sort_values()
 
         self.tax_loss_carryforward = 0
         self.tax_loss_carryforward_years = 8
@@ -234,7 +244,35 @@ class BaseStrategy:
         """
         raise NotImplementedError("Subclasses must implement this method.")
 
+class ExampleStrategy(BaseStrategy):
+    """
+    Example implementation of a trading strategy.
+    Buys when the price is below the 20-day moving average and sells when above.
+    """
 
+    def get_trade_signal(self, df):
+        """
+        Get trade signal based on simple moving average strategy.
+
+        Parameters:
+        df (pd.DataFrame): DataFrame slice for a specific ticker up to the current date.
+
+        Returns:
+        str: Trade signal ('BUY', 'SELL', 'HOLD').
+        """
+
+        if len(df) < 20:
+            return 'HOLD'
+
+        current_price = df.iloc[-1]['Execution Price']
+        sma_20 = df['Execution Price'].rolling(window=20).mean().iloc[-1]
+
+        if current_price < sma_20:
+            return 'BUY'
+        elif current_price > sma_20:
+            return 'SELL'
+        else:
+            return 'HOLD'
 
 
 
