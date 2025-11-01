@@ -6,19 +6,8 @@ import pandas as pd
 import ta
 import numpy as np
 import warnings
+import utils
 warnings.filterwarnings("ignore")
-
-def load_ohlcv_data(file_path):
-    """
-    Load OHLCV data from a CSV file.
-    Args:
-        file_path (str): Path to the CSV file.
-    Returns:
-        pd.DataFrame: Multi-index DataFrame with OHLCV data.
-    """
-
-    df = pd.read_csv("ohlcv_data.csv", index_col=[1, 0])
-    return df
 
 def hull_moving_average(series, window):
     """
@@ -434,7 +423,7 @@ def get_features(file_path):
     Saves the data to 'features.csv'.
     """
 
-    df = load_ohlcv_data(file_path)
+    df = utils.load_multiindex_csv( file_path)
 
     # df is a multi-index dataframe with (symbol, datetime) as index
     final_df = pd.DataFrame()
