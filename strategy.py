@@ -49,6 +49,8 @@ class BaseStrategy:
 
         self.tax_loss_carryforward = 0
         self.tax_loss_carryforward_years = 8
+        self.tax_paid = 0
+        self.transaction_costs_paid = 0
 
         self.history = {
             'Date' : [],
@@ -67,6 +69,10 @@ class BaseStrategy:
         self.portfolio_value = self.initial_cash
         self.entry_prices = {ticker: 0 for ticker in self.tickers}
         self.exit_prices = {ticker: 0 for ticker in self.tickers}
+        self.tax_loss_carryforward = 0
+        self.tax_loss_carryforward_years = 8
+        self.tax_paid = 0
+        self.transaction_costs_paid = 0
         self.history = {
             'Date' : [],
             'Portfolio Value' : [],
@@ -129,6 +135,7 @@ class BaseStrategy:
             # Execute sells
             if sell_tickers:
                 trades.extend([(s[0], 'SELL', self.position[s[0]], s[2]) for s in sell_tickers])
+                self.transaction_costs_paid += np.sum([self.position[s[0]] * s[2] * self.transaction_cost for s in sell_tickers])
                 self.cash+= np.sum([self.position[s[0]] * s[2] * (1 - self.transaction_cost) for s in sell_tickers])
                 self.position.update({s[0]: 0 for s in sell_tickers})
 
@@ -171,6 +178,7 @@ class BaseStrategy:
                         if cost <= self.cash:
                             self.position[s[0]] += num_shares
                             self.cash -= cost
+                            self.transaction_costs_paid += num_shares * s[2] * self.transaction_cost
                             trades.append((s[0], 'BUY', num_shares, s[2]))
 
 
@@ -205,7 +213,7 @@ class BaseStrategy:
         # Use self.history to calculate profits
         # profit is calculated as portfolio value on tax date - portfolio value on start date
         start_value = self.history['Portfolio Value'][self.history['Date'].index(period_dates[0])]
-        end_value = self.history['Portfolio Value'][self.history['Date'].index(tax_date)]
+        end_value = self.history['Portfolio Value'][self.history['Date'].index(period_dates[-1])]
 
         total_profit = end_value - start_value
 
@@ -222,6 +230,7 @@ class BaseStrategy:
                     total_profit -= self.tax_loss_carryforward
                     self.tax_loss_carryforward = 0
                     self.tax_loss_carryforward_years = 8
+                    self.tax_paid += total_profit * self.tax_rate
                 else:
                     self.tax_loss_carryforward -= total_profit
                     self.tax_loss_carryforward_years -= 1
