@@ -37,6 +37,9 @@ class BaseStrategy:
         self.train_dates = train_data.index.get_level_values(0).unique().sort_values()
         self.test_dates = test_data.index.get_level_values(0).unique().sort_values()
 
+        self.tax_loss_carryforward = 0
+        self.tax_loss_carryforward_years = 8
+
         self.history = {
             'Date' : [],
             'Portfolio Value' : [],
@@ -109,9 +112,9 @@ class BaseStrategy:
 
             # Execute sells
             if sell_tickers:
+                trades.extend([(s[0], 'SELL', self.position[s[0]], s[2]) for s in sell_tickers])
                 self.cash+= np.sum([self.position[s[0]] * s[2] * (1 - self.transaction_cost) for s in sell_tickers])
                 self.position.update({s[0]: 0 for s in sell_tickers})
-                trades.extend([(s[0], 'SELL', self.position[s[0]], s[2]) for s in sell_tickers])
 
             # Check if it is the tax payment date
             tax_date = utils.get_tax_date(dates, current_date)
@@ -163,6 +166,53 @@ class BaseStrategy:
             self.history['Cash'].append(self.cash)
             self.history['Positions'].append(self.position.copy())
             self.history['Trades'].append(trades)
+
+    def calculate_tax_payment(self, dates, tax_date):
+        """
+        Calculate the tax payment due on the tax date.
+
+        Parameters:
+        dates (pd.DatetimeIndex): The available dates.
+        tax_date (pd.Timestamp): The tax payment date.
+
+        Returns:
+        float: The tax payment amount.
+        """
+
+        # Start date should be 1st April of the previous year
+        start_date = pd.Timestamp(year=tax_date.year - 1, month=4, day=1)
+
+        # Slice the date and data to get the relevant period
+        period_dates = dates[(dates >= start_date) & (dates <= tax_date)]
+
+        # Use self.history to calculate profits
+        # profit is calculated as portfolio value on tax date - portfolio value on start date
+        start_value = self.history['Portfolio Value'][self.history['Date'].index(period_dates[0])]
+        end_value = self.history['Portfolio Value'][self.history['Date'].index(tax_date)]
+
+        total_profit = end_value - start_value
+
+        # Adjust profit with tax loss carryforward
+
+        if total_profit < 0:
+            # Update tax loss carryforward
+            self.tax_loss_carryforward += -total_profit
+            self.tax_loss_carryforward_years -= 1
+            total_profit = 0
+        else:
+            if self.tax_loss_carryforward > 0:
+                if total_profit >= self.tax_loss_carryforward:
+                    total_profit -= self.tax_loss_carryforward
+                    self.tax_loss_carryforward = 0
+                    self.tax_loss_carryforward_years = 8
+                else:
+                    self.tax_loss_carryforward -= total_profit
+                    self.tax_loss_carryforward_years -= 1
+                    total_profit = 0
+
+        tax_payment = total_profit * self.tax_rate if total_profit > 0 else 0
+
+        return tax_payment
 
 
 
