@@ -5,6 +5,7 @@ Module for designing and implementing trading strategies.
 import numpy as np
 import pandas as pd
 import utils
+import random
 
 class BaseStrategy:
     """
@@ -142,8 +143,10 @@ class BaseStrategy:
             # Check if it is the tax payment date
             tax_date = utils.get_tax_date(dates, current_date)
             if current_date == tax_date:
+                # Set the payment date to the previous date in dates from current_date
+                payment_date = dates[dates < tax_date][-1]
                 # Call the tax payment method
-                tax_payment = self.calculate_tax_payment(dates, current_date)
+                tax_payment = self.calculate_tax_payment(dates, payment_date)
                 self.cash -= tax_payment
 
             # Calculate available cash for buys
@@ -210,7 +213,7 @@ class BaseStrategy:
         # Slice the date and data to get the relevant period
         period_dates = dates[(dates >= start_date) & (dates <= tax_date)]
 
-        # Use self.history to calculate profits
+        # Use self.history to calculate profit
         # profit is calculated as portfolio value on tax date - portfolio value on start date
         start_value = self.history['Portfolio Value'][self.history['Date'].index(period_dates[0])]
         end_value = self.history['Portfolio Value'][self.history['Date'].index(period_dates[-1])]
@@ -261,7 +264,7 @@ class ExampleStrategy(BaseStrategy):
 
     def get_trade_signal(self, df):
         """
-        Get trade signal based on simple moving average strategy.
+        Get trade signal based on random strategy.
 
         Parameters:
         df (pd.DataFrame): DataFrame slice for a specific ticker up to the current date.
@@ -270,18 +273,12 @@ class ExampleStrategy(BaseStrategy):
         str: Trade signal ('BUY', 'SELL', 'HOLD').
         """
 
-        if len(df) < 20:
+        if len(df) < 2:
             return 'HOLD'
 
-        current_price = df.iloc[-1]['Execution Price']
-        sma_20 = df['Execution Price'].rolling(window=20).mean().iloc[-1]
+        signal = random.choice(['BUY', 'SELL', 'HOLD'])
 
-        if current_price < sma_20:
-            return 'BUY'
-        elif current_price > sma_20:
-            return 'SELL'
-        else:
-            return 'HOLD'
+        return signal
 
 
 
