@@ -6,6 +6,9 @@ import numpy as np
 import pandas as pd
 import utils
 import random
+import matplotlib.pyplot as plt
+import seaborn as sns
+import mplfinance as mpf
 
 class BaseStrategy:
     """
@@ -255,6 +258,37 @@ class BaseStrategy:
         str: Trade signal ('BUY', 'SELL', 'HOLD').
         """
         raise NotImplementedError("Subclasses must implement this method.")
+
+    def plot_candlestick(self, ticker, train=True, start_date=None, end_date=None):
+        """
+        Plot candlestick chart for a given ticker.
+
+        Parameters:
+        ticker (str): Ticker symbol.
+        train (bool): If True, plot training data; otherwise, testing data.
+        start_date (pd.Timestamp): Start date for the plot.
+        end_date (pd.Timestamp): End date for the plot.
+
+        Returns:
+        None
+        """
+
+        data = self.train_data if train else self.test_data
+        dates = self.train_dates if train else self.test_dates
+
+        if start_date is None:
+            start_date = dates[0]
+        if end_date is None:
+            end_date = dates[-1]
+
+        df = data.xs(ticker, level=1).copy()
+        df = df[(df.index >= start_date) & (df.index <= end_date)]
+
+        df.index.name = 'Date'
+        # Make sure index is datetime
+        df.index = pd.to_datetime(df.index)
+        mpf.plot(df, type='candle', style='charles', title=f'Candlestick chart for {ticker}', volume=True)
+
 
 class ExampleStrategy(BaseStrategy):
     """
