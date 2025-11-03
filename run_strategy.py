@@ -39,3 +39,5 @@ if __name__ == "__main__":
     print("Transaction costs incurred during the strategy execution:", ES.transaction_costs_paid)
 
     print("Final Portfolio Value:", ES.portfolio_value)
+
+    ES.plot_candlestick("ABB.NS", start_date="2015-01-01", end_date="2015-03-31")
