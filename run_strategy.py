@@ -21,7 +21,7 @@ if __name__ == "__main__":
     logger.info(f"Training data shape: {train_df.shape}")
     logger.info(f"Testing data shape: {test_df.shape}")
 
-    ES = ExampleStrategy(train_df, test_df, tickers=["ABB.NS"])
+    ES = ExampleStrategy(train_df, test_df, tickers=["ABB.NS", "MPHASIS.NS"])
 
     ES.execute_strategy()
 
