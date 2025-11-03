@@ -9,6 +9,7 @@ import random
 import matplotlib.pyplot as plt
 import seaborn as sns
 import mplfinance as mpf
+import plotly.graph_objects as go
 
 class BaseStrategy:
     """
@@ -287,7 +288,16 @@ class BaseStrategy:
         df.index.name = 'Date'
         # Make sure index is datetime
         df.index = pd.to_datetime(df.index)
-        mpf.plot(df, type='candle', style='charles', title=f'Candlestick chart for {ticker}', volume=True)
+
+        fig = go.Figure(data=[go.Candlestick(x=df.index,
+                        open=df['Open'],
+                        high=df['High'],
+                        low=df['Low'],
+                        close=df['Close'])])
+        fig.update_layout(title=f'Candlestick chart for {ticker}',
+                          yaxis_title='Price',
+                          xaxis_title='Date')
+        fig.show()
 
 
 class ExampleStrategy(BaseStrategy):
