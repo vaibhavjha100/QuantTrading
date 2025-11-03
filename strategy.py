@@ -6,9 +6,6 @@ import numpy as np
 import pandas as pd
 import utils
 import random
-import matplotlib.pyplot as plt
-import seaborn as sns
-import mplfinance as mpf
 import plotly.graph_objects as go
 
 class BaseStrategy:
