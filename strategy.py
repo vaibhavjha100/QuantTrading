@@ -54,6 +54,8 @@ class BaseStrategy:
         self.tax_paid = 0
         self.transaction_costs_paid = 0
 
+        self.indicators = []
+
         self.history = {
             'Date' : [],
             'Portfolio Value' : [],
@@ -271,6 +273,16 @@ class BaseStrategy:
         None
         """
 
+        indicators = self.indicators
+
+        history_df = pd.DataFrame(self.history)
+        history_df['Date'] = pd.to_datetime(history_df['Date'])
+        history_df.set_index('Date', inplace=True)
+
+        history_df.sort_index(inplace=True)
+
+
+
         data = self.train_data if train else self.test_data
         dates = self.train_dates if train else self.test_dates
 
@@ -282,20 +294,48 @@ class BaseStrategy:
         df = data.xs(ticker, level=1).copy()
         df = df[(df.index >= start_date) & (df.index <= end_date)]
 
+        # Slice trades for the specified date range
+        trades = history_df['Trades']
+        trades = trades[(history_df.index >= start_date) & (history_df.index <= end_date)]
+        # Slice trades for the specified ticker
+        trades = trades.apply(lambda x: [trade for trade in x if trade[0] == ticker])
+
+
+
         df.index.name = 'Date'
         # Make sure index is datetime
         df.index = pd.to_datetime(df.index)
 
-        fig = go.Figure(data=[go.Candlestick(x=df.index,
-                        open=df['Open'],
-                        high=df['High'],
-                        low=df['Low'],
-                        close=df['Close'])])
-        fig.update_layout(title=f'Candlestick chart for {ticker}',
-                          yaxis_title='Price',
-                          xaxis_title='Date')
-        fig.show()
+        colors = [
+            'blue', 'red', 'green', 'orange', 'purple', 'brown', 'pink', 'gray',
+            'olive', 'cyan', 'magenta', 'teal', 'navy', 'maroon', 'lime', 'aqua',
+            'coral', 'gold', 'indigo', 'khaki', 'lavender', 'salmon', 'sienna',
+            'steelblue', 'tomato', 'turquoise', 'violet', 'yellowgreen', 'darkblue',
+            'darkgreen', 'darkred', 'darkgray', 'darkmagenta', 'darkcyan',
+            'darkseagreen', 'darkslateblue', 'darkslategray', 'darkturquoise',
+            'lightblue', 'lightcoral', 'lightcyan', 'lightgreen', 'lightgray',
+            'lightpink', 'lightsalmon', 'lightseagreen', 'lightskyblue',
+            'lightslategray', 'lightsteelblue', 'lightyellow'
+        ]
+        fig = go.Figure()
 
+        fig.add_trace(go.Candlestick(x=df.index,
+                                     open=df['Open'],
+                                     high=df['High'],
+                                     low=df['Low'],
+                                     close=df['Close'],
+                                     name='Candlestick'))
+
+        # Add indicators
+
+        for indicator in indicators:
+            if indicator in df.columns:
+                color = colors[indicators.index(indicator) % len(colors)]
+                fig.add_trace(go.Scatter(x=df.index, y=df[indicator], mode='lines', name=indicator, line=dict(width=2, color=color)))
+
+        fig.update_layout(title=f'Candlestick chart for {ticker}', yaxis_title='Price', xaxis_title='Date')
+
+        fig.show()
 
 class ExampleStrategy(BaseStrategy):
     """
