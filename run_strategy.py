@@ -40,4 +40,6 @@ if __name__ == "__main__":
 
     print("Final Portfolio Value:", ES.portfolio_value)
 
+    ES.indicators = ["SMA10", "RSI14"]
+
     ES.plot_candlestick("ABB.NS", start_date="2015-01-01", end_date="2015-03-31")
