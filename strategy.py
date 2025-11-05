@@ -307,7 +307,7 @@ class BaseStrategy:
         df.index = pd.to_datetime(df.index)
 
         colors = [
-            'blue', 'red', 'green', 'orange', 'purple', 'brown', 'pink', 'gray',
+            'red', 'green', 'orange', 'purple', 'brown', 'pink', 'gray',
             'olive', 'cyan', 'magenta', 'teal', 'navy', 'maroon', 'lime', 'aqua',
             'coral', 'gold', 'indigo', 'khaki', 'lavender', 'salmon', 'sienna',
             'steelblue', 'tomato', 'turquoise', 'violet', 'yellowgreen', 'darkblue',
@@ -331,9 +331,48 @@ class BaseStrategy:
         for indicator in indicators:
             if indicator in df.columns:
                 color = colors[indicators.index(indicator) % len(colors)]
-                fig.add_trace(go.Scatter(x=df.index, y=df[indicator], mode='lines', name=indicator, line=dict(width=2, color=color)))
+                # fig.add_trace(go.Scatter(x=df.index, y=df[indicator], mode='lines', name=indicator, line=dict(width=2, color=color)))
 
-        fig.update_layout(title=f'Candlestick chart for {ticker}', yaxis_title='Price', xaxis_title='Date')
+                if any(indicator.startswith(x) for x in ['SMA', 'EMA', 'WMA', 'HMA', 'VWAP']):
+                    fig.add_trace(go.Scatter(x=df.index, y=df[indicator], mode='lines', name=indicator, line=dict(width=2, color=color), yaxis='y'))
+
+                elif any(x in indicator for x in ['RSI', 'Stochastic', 'Williams %R', 'CCI', 'MFI', 'ROC', 'Stochastic RSI']):
+                    fig.add_trace(go.Scatter(x=df.index, y=df[indicator], mode='lines', name=indicator, line=dict(width=2, color=color), yaxis='y2'))
+
+                elif any(x in indicator for x in ['MACD', 'ADX', 'DMI', 'Parabolic SAR', 'Aroon', 'Ichimoku']):
+                    fig.add_trace(go.Scatter(x=df.index, y=df[indicator], mode='lines', name=indicator, line=dict(width=2, color=color), yaxis='y2'))
+
+                elif 'Bollinger' in indicator:
+                    color = "blue"
+                    if 'Upper' in indicator:
+                        fig.add_trace(go.Scatter(x=df.index, y=df[indicator], mode='lines', name=indicator, line=dict(width=2, color=color), yaxis='y'))
+                    elif 'Lower' in indicator:
+                        fig.add_trace(go.Scatter(x=df.index, y=df[indicator], mode='lines', name=indicator, line=dict(width=2, color=color), yaxis='y'))
+                    else:
+                        fig.add_trace(go.Scatter(x=df.index, y=df[indicator], mode='lines', name=indicator, line=dict(width=2, color=color), yaxis='y'))
+
+                elif any(x in indicator for x in ['ATR', 'Keltner', 'Donchian', 'Standard Deviation']):
+                    fig.add_trace(go.Scatter(x=df.index, y=df[indicator], mode='lines', name=indicator, line=dict(width=2, color=color), yaxis='y'))
+
+                elif any(x in indicator for x in
+                         ['OBV', 'VWAP', 'CMF', 'A/D Line', 'Volume Oscillator', 'PVT', 'Volume Profile']):
+                    fig.add_trace(go.Bar(x=df.index, y=df[indicator], name=indicator, marker_color=color, yaxis='y3'))
+
+                elif any(x in indicator for x in ['Fibonacci', 'Pivot Points']):
+                    # Add as horizontal lines at the last value
+                    fig.add_hline(y=df[indicator].iloc[-1], line_dash="dot", annotation_text=indicator, line_color=color)
+
+                else:
+                    fig.add_trace(go.Scatter(x=df.index, y=df[indicator], mode='lines', name=indicator, line=dict(width=2, color=color), yaxis='y'))
+
+        #fig.update_layout(title=f'Candlestick chart for {ticker}', yaxis_title='Price', xaxis_title='Date')
+        fig.update_layout(
+            title=f'Candlestick chart for {ticker}',
+            xaxis=dict(title='Date'),
+            yaxis=dict(title='Price'),
+            yaxis2=dict(title='Indicators', overlaying='y', side='right', showgrid=False),
+            yaxis3=dict(title='Volume', anchor='free', overlaying='y', side='right', position=0.95, showgrid=False),
+            legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1))
 
         fig.show()
 
