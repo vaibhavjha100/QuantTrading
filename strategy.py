@@ -411,7 +411,7 @@ class BaseStrategy:
 class ExampleStrategy(BaseStrategy):
     """
     Example implementation of a trading strategy.
-    Buys when the price is below the 20-day moving average and sells when above.
+    Inherits from BaseStrategy and implements a random trade signal generator.
     """
 
     def get_trade_signal(self, df):
