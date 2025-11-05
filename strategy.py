@@ -325,6 +325,28 @@ class BaseStrategy:
                                      low=df['Low'],
                                      close=df['Close'],
                                      name='Candlestick'))
+        # Add trade markers
+        buy_dates = []
+        sell_dates = []
+        buy_prices = []
+        sell_prices = []
+
+        for trade_date, trade_list in trades.items():
+            for trade in trade_list:
+                trade_ticker, action, quantity, price = trade
+
+                if action.lower() == 'buy':
+                    buy_dates.append(trade_date)
+                    buy_prices.append(price)
+                elif action.lower() == 'sell':
+                    sell_dates.append(trade_date)
+                    sell_prices.append(price)
+
+        fig.add_trace(go.Scatter(x=buy_dates, y=buy_prices, mode='markers', name='Buy',
+                                 marker=dict(symbol='triangle-up', color='lime', size=12), line=dict(width=1, color='black')))
+
+        fig.add_trace(go.Scatter(x=sell_dates, y=sell_prices, mode='markers', name='Sell',
+                                 marker=dict(symbol='triangle-down', color='magenta', size=12), line=dict(width=1, color='black')))
 
         # Add indicators
 
