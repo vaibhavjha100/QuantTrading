@@ -28,17 +28,9 @@ if __name__ == "__main__":
     # Create a DataFrame from history dictionary
     history_df = pd.DataFrame(ES.history)
 
-    # Slice history_df for rows where length of Trades > 0
-    trades_df = history_df[history_df['Trades'].apply(lambda x: len(x) > 0)]
+    logger.info("Strategy execution completed.")
 
-    print("Trades made during the strategy execution:")
-    print(trades_df.head())
-    print(trades_df.info())
-
-    print("Tax paid during the strategy execution:", ES.tax_paid)
-    print("Transaction costs incurred during the strategy execution:", ES.transaction_costs_paid)
-
-    print("Final Portfolio Value:", ES.portfolio_value)
+    ES.print_summary()
 
     ES.indicators = ["SMA10", "RSI14"]
 
