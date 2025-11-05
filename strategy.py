@@ -398,6 +398,16 @@ class BaseStrategy:
 
         fig.show()
 
+    def print_summary(self):
+        """
+        Print a summary of the strategy execution.
+        """
+        print("Final Portfolio Value:", self.portfolio_value)
+        ret = (self.portfolio_value - self.initial_cash) / self.initial_cash * 100
+        print(f"Total Return: {ret:.2f}%")
+        print("Tax paid during the strategy execution:", self.tax_paid)
+        print("Transaction costs incurred during the strategy execution:", self.transaction_costs_paid)
+
 class ExampleStrategy(BaseStrategy):
     """
     Example implementation of a trading strategy.
