@@ -102,6 +102,31 @@ def get_ohlcv_data(tickers, start_date, end_date, interval="1d"):
 
     return data
 
+def get_benchmark_data(benchmark_ticker, start_date, end_date, interval="1d"):
+    """
+    Fetch OHLCV data for benchmark index using yfinance.
+    Args:
+        benchmark_ticker (str): Ticker symbol for the benchmark index.
+        start_date (str): Start date in 'YYYY-MM-DD' format.
+        end_date (str): End date in 'YYYY-MM-DD' format.
+        interval (str): Data interval.
+    Returns:
+        pd.DataFrame: DataFrame containing OHLCV data for the benchmark.
+    Saves the data to 'benchmark_data.csv'.
+    """
+    print(f"Fetching benchmark data for {benchmark_ticker}...")
+    benchmark_data = yf.download(benchmark_ticker, start=start_date, end=end_date, interval=interval)
+
+    # Drop Adjusted Close if exists
+    if 'Adj Close' in benchmark_data.columns:
+        benchmark_data = benchmark_data.drop(columns=['Adj Close'])
+
+    # Save to CSV
+    benchmark_data.to_csv("benchmark_data.csv")
+    print("Benchmark data saved to 'benchmark_data.csv'")
+
+    return benchmark_data
+
 def filter_tickers(data, min_start_date="2009-02-01"):
     """
     Filter tickers based on minimum start date.
@@ -127,4 +152,5 @@ if __name__ == "__main__":
     tickers = get_tickers()
 
     ohlcv_data = get_ohlcv_data(tickers, start_date="2009-01-01", end_date="2025-01-01", interval="1d")
+    benchmark_data = get_benchmark_data("^NSEI", start_date="2009-01-01", end_date="2025-01-01", interval="1d")
 
