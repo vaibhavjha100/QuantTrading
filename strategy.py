@@ -416,6 +416,167 @@ class BaseStrategy:
         num_trades = sum([len(trade_list) for trade_list in self.history['Trades']])
         print("Total number of trades executed:", num_trades)
 
+    def _get_portfolio(self):
+        """
+        Create a daily portfolio DataFrame from the history.
+        """
+        portfolio_df = pd.DataFrame(self.history)
+        portfolio_df['Date'] = pd.to_datetime(portfolio_df['Date'])
+        portfolio_df.set_index('Date', inplace=True)
+        portfolio_df.sort_index(inplace=True)
+        self.portfolio = portfolio_df
+
+    def _calculate_return_metrics(self, df):
+        """
+        Calculate return metrics for the strategy.
+        Parameters:
+            df (pd.DataFrame): DataFrame containing portfolio values over time.
+        Returns:
+            dict: Dictionary containing return metrics.
+        """
+        df = df.copy()
+
+        initial_value = self.initial_cash
+        final_value = df['Portfolio Value'].iloc[-1]
+
+        total_return = (final_value - initial_value) / initial_value
+
+        total_gross_profit = final_value - initial_value + self.tax_paid + self.transaction_costs_paid
+        total_net_profit = final_value - initial_value
+
+        # Calculate number of years
+        num_days = (df.index[-1] - df.index[0]).days
+        num_years = num_days / 365.25
+
+        annualized_return = (1 + total_return) ** (1 / num_years) - 1
+
+        return {
+            'Total Return': total_return,
+            'Annualized Return': annualized_return,
+            'Total Gross Profit': total_gross_profit,
+            'Total Net Profit': total_net_profit,
+            'Number of Years': num_years,
+            'Number of Days': len(df)
+        }
+
+
+    def _calculate_risk_metrics(self, df, confidence_level=0.95):
+        """
+        Calculate risk metrics for the strategy.
+        Parameters:
+            df (pd.DataFrame): DataFrame containing portfolio values over time.
+            confidence_level (float): Confidence level for VaR calculation.
+        Returns:
+            dict: Dictionary containing risk metrics.
+        """
+
+        df = df.copy()
+
+        cumulative_max = df['Portfolio Value'].cummax()
+        drawdowns = (df['Portfolio Value'] - cumulative_max) / cumulative_max
+
+        max_drawdown = drawdowns.min()
+        avg_drawdown = drawdowns.mean()
+
+        # Calculate maximum drawdown duration
+        in_drawdown = drawdowns < 0
+        drawdown_durations = []
+        current_period = 0
+
+        for is_dd in in_drawdown:
+            if is_dd:
+                current_period += 1
+            else:
+                if current_period > 0:
+                    drawdown_durations.append(current_period)
+                    current_period = 0
+
+        if current_period > 0:
+            drawdown_durations.append(current_period)
+
+        max_drawdown_duration = max(drawdown_durations) if drawdown_durations else 0
+
+        # Volatility
+
+        daily_volatility = df['Returns'].std()
+        annualized_volatility = daily_volatility * np.sqrt(252)
+
+        # Downside Deviation
+        downside_returns = df['Returns'][df['Returns'] < 0]
+        daily_downside_deviation = downside_returns.std()
+        annualized_downside_deviation = daily_downside_deviation * np.sqrt(252)
+
+        # VaR
+        var = np.percentile(df['Returns'], (1 - confidence_level) * 100)
+
+        # CVaR
+        cvar = df['Returns'][df['Returns'] <= var].mean()
+
+        return {
+            'Max Drawdown': max_drawdown,
+            'Avg Drawdown': avg_drawdown,
+            'Max Drawdown Duration (days)': max_drawdown_duration,
+            'Annualized Volatility': annualized_volatility,
+            'Annualized Downside Deviation': annualized_downside_deviation,
+            'VaR ({}%)'.format(int(confidence_level * 100)): var,
+            'CVaR ({}%)'.format(int(confidence_level * 100)): cvar
+        }
+
+    def _calculate_risk_adjusted_metrics(self, df):
+        """
+        Calculate risk-adjusted metrics for the strategy.
+        Parameters:
+            df (pd.DataFrame): DataFrame containing portfolio values over time.
+        Returns:
+            dict: Dictionary containing risk-adjusted metrics.
+        """
+
+        rf = self.rf
+
+        df = df.copy()
+
+        return_metrics = self._calculate_return_metrics(df)
+        risk_metrics = self._calculate_risk_metrics(df)
+
+        annualized_return = return_metrics['Annualized Return']
+        annualized_volatility = risk_metrics['Annualized Volatility']
+
+        sharpe_ratio = (annualized_return - rf) / annualized_volatility if annualized_volatility != 0 else np.nan
+
+        downside_deviation = risk_metrics['Annualized Downside Deviation']
+        sortino_ratio = (annualized_return - rf) / downside_deviation if downside_deviation != 0 else np.nan
+
+        max_drawdown = risk_metrics['Max Drawdown']
+        calmar_ratio = annualized_return / abs(max_drawdown) if max_drawdown != 0 else np.nan
+
+        return {
+            'Sharpe Ratio': sharpe_ratio,
+            'Sortino Ratio': sortino_ratio,
+            'Calmar Ratio': calmar_ratio
+        }
+
+
+
+
+    def calculate_performance_metrics(self):
+        """
+        Calculate performance metrics for the strategy.
+        """
+        if not hasattr(self, 'portfolio'):
+            self._get_portfolio()
+
+        df = self.portfolio.copy()
+
+        df['Returns'] = df['Portfolio Value'].pct_change().fillna(0, inplace=True)
+
+        metrics = {}
+
+        metrics['Returns & Profitability'] = self._calculate_return_metrics(df)
+        metrics['Risk'] = self._calculate_risk_metrics(df)
+        metrics['Risk-Adjusted Performance'] = self._calculate_risk_adjusted_metrics(df)
+
+
+
 class ExampleStrategy(BaseStrategy):
     """
     Example implementation of a trading strategy.
