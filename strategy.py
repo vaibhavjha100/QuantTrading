@@ -788,17 +788,20 @@ class BaseStrategy:
         combined = pd.concat([strategy_returns, benchmark_returns], axis=1, join='inner')
         combined.columns = ['Strategy Returns', 'Benchmark Returns']
 
+        # Drop NaN values
+        combined.dropna(inplace=True)
+
         # Calculate Beta
         covariance = combined.cov().iloc[0, 1]
         benchmark_variance = combined['Benchmark Returns'].var()
-        beta = covariance / benchmark_variance if benchmark_variance != 0 else np.nan
+        beta = covariance / benchmark_variance
 
         # Calculate Alpha
         rf = self.rf
         annualized_strategy_return = (1 + strategy_returns.mean()) ** 252 - 1
         annualized_benchmark_return = (1 + benchmark_returns.mean()) ** 252 - 1
 
-        alpha = annualized_strategy_return - (rf + beta * (annualized_benchmark_return - rf)) if not np.isnan(beta) else np.nan
+        alpha = annualized_strategy_return - (rf + beta * (annualized_benchmark_return - rf))
 
         return {
             'Beta': beta,
