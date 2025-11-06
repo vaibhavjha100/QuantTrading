@@ -25,9 +25,6 @@ if __name__ == "__main__":
 
     ES.execute_strategy()
 
-    # Create a DataFrame from history dictionary
-    history_df = pd.DataFrame(ES.history)
-
     logger.info("Strategy execution completed.")
 
     ES.print_summary()
