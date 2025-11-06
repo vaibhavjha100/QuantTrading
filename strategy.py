@@ -638,6 +638,54 @@ class BaseStrategy:
             'Average Trade Duration (days)': avg_duration
         }
 
+    def _calculate_streak_metrics(self, df):
+        """
+        Calculate streak metrics for the strategy.
+        Parameters:
+            df (pd.DataFrame): DataFrame containing portfolio values over time.
+        Returns:
+            dict: Dictionary containing streak metrics.
+        """
+
+        daily_pnl = df['Portfolio Value'].diff().fillna(0)
+
+        win_days = (daily_pnl > 0).astype(int)
+
+        streaks = []
+        current_streak = 0
+        current_type = None
+
+        for is_win in win_days:
+            if is_win == current_type:
+                current_streak += 1
+            else:
+                if current_streak > 0:
+                    streaks.append((current_type, current_streak))
+                current_type = is_win
+                current_streak = 1
+
+        if current_streak > 0:
+            streaks.append((current_type, current_streak))
+
+        win_streaks = [s for s in streaks if s[0] == 1]
+        loss_streaks = [s for s in streaks if s[0] == 0]
+
+        max_consecutive_wins = max([s[1] for s in win_streaks], default=0)
+        max_consecutive_losses = max([s[1] for s in loss_streaks], default=0)
+        avg_consecutive_wins = np.mean([s[1] for s in win_streaks]) if win_streaks else 0
+        avg_consecutive_losses = np.mean([s[1] for s in loss_streaks]) if loss_streaks else 0
+        num_win_streaks = len(win_streaks)
+        num_loss_streaks = len(loss_streaks)
+
+        return {
+            'Max Consecutive Wins': max_consecutive_wins,
+            'Max Consecutive Losses': max_consecutive_losses,
+            'Avg Consecutive Wins': avg_consecutive_wins,
+            'Avg Consecutive Losses': avg_consecutive_losses,
+            'Number of Win Streaks': num_win_streaks,
+            'Number of Loss Streaks': num_loss_streaks
+        }
+
     def calculate_performance_metrics(self):
         """
         Calculate performance metrics for the strategy.
@@ -654,6 +702,8 @@ class BaseStrategy:
         metrics['Returns & Profitability'] = self._calculate_return_metrics(df)
         metrics['Risk'] = self._calculate_risk_metrics(df)
         metrics['Risk-Adjusted Performance'] = self._calculate_risk_adjusted_metrics(df)
+        metrics['Trade Statistics'] = self._calculate_trade_statistics(df)
+        metrics['Streaks'] = self._calculate_streak_metrics(df)
 
 
 
