@@ -7,6 +7,8 @@ import logging
 import pandas as pd
 import utils
 import numpy
+import warnings
+warnings.filterwarnings("ignore")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
