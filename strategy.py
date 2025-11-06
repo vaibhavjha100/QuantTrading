@@ -13,7 +13,7 @@ class BaseStrategy:
     Base class for trading strategies.
     """
 
-    def __init__(self, train_data, test_data, initial_cash=1_00_000, tickers=[], transaction_cost=0.003, tax_rate=0.2):
+    def __init__(self, train_data, test_data, initial_cash=1_00_000, tickers=[], transaction_cost=0.003, tax_rate=0.2, rf=0.065):
         """
         Initialize the strategy with training and testing data.
 
@@ -53,6 +53,7 @@ class BaseStrategy:
         self.tax_loss_carryforward_years = 8
         self.tax_paid = 0
         self.transaction_costs_paid = 0
+        self.rf = rf
 
         self.indicators = []
 
