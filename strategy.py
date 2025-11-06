@@ -13,7 +13,7 @@ class BaseStrategy:
     Base class for trading strategies.
     """
 
-    def __init__(self, train_data, test_data, initial_cash=1_00_000, tickers=[], transaction_cost=0.003, tax_rate=0.2, rf=0.065):
+    def __init__(self, train_data, test_data, initial_cash=1_00_000, tickers=[], transaction_cost=0.003, tax_rate=0.2, rf=0.065, benchmark=None):
         """
         Initialize the strategy with training and testing data.
 
@@ -56,6 +56,7 @@ class BaseStrategy:
         self.rf = rf
 
         self.indicators = []
+        self.benchmark = benchmark
 
         self.history = {
             'Date' : [],
@@ -757,6 +758,44 @@ class BaseStrategy:
             'Tax as % of Returns': tax_pct_of_returns
         }
 
+    def _calculate_benchmark_metrics(self, df, benchmark):
+        """
+        Calculate benchmark comparison metrics for the strategy.
+        Parameters:
+            df (pd.DataFrame): DataFrame containing portfolio values over time.
+            benchmark (pd.Series): DataFrame containing benchmark values over time.
+        Returns:
+            dict: Dictionary containing benchmark comparison metrics.
+        """
+        df = df.copy()
+        benchmark = benchmark.copy()
+
+        benchmark_returns = benchmark['Returns']
+        strategy_returns = df['Returns']
+
+        # Align the indices
+        combined = pd.concat([strategy_returns, benchmark_returns], axis=1, join='inner')
+        combined.columns = ['Strategy Returns', 'Benchmark Returns']
+
+        # Calculate Beta
+        covariance = combined.cov().iloc[0, 1]
+        benchmark_variance = combined['Benchmark Returns'].var()
+        beta = covariance / benchmark_variance if benchmark_variance != 0 else np.nan
+
+        # Calculate Alpha
+        rf = self.rf
+        annualized_strategy_return = (1 + strategy_returns.mean()) ** 252 - 1
+        annualized_benchmark_return = (1 + benchmark_returns.mean()) ** 252 - 1
+
+        alpha = annualized_strategy_return - (rf + beta * (annualized_benchmark_return - rf)) if not np.isnan(beta) else np.nan
+
+        return {
+            'Beta': beta,
+            'Alpha': alpha,
+            'Correlation with Benchmark': combined.corr().iloc[0, 1]
+        }
+
+
     def calculate_performance_metrics(self):
         """
         Calculate performance metrics for the strategy.
@@ -765,8 +804,10 @@ class BaseStrategy:
             self._get_portfolio()
 
         df = self.portfolio.copy()
+        benchmark = self.benchmark
 
         df['Returns'] = df['Portfolio Value'].pct_change().fillna(0, inplace=True)
+        benchmark['Returns'] = benchmark['Close'].pct_change().fillna(0, inplace=True)
 
         metrics = {}
 
@@ -777,6 +818,7 @@ class BaseStrategy:
         metrics['Streaks'] = self._calculate_streak_metrics(df)
         metrics['Portfolio'] = self._calculate_portfolio_metrics(df)
         metrics['Costs & Taxes'] = self._calculate_cost_tax_metrics(df)
+        metrics['Benchmark Comparison'] = self._calculate_benchmark_metrics(df, benchmark)
 
 
 
