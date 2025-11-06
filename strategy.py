@@ -13,7 +13,7 @@ class BaseStrategy:
     Base class for trading strategies.
     """
 
-    def __init__(self, train_data, test_data, initial_cash=1_00_000, tickers=[], transcation_cost=0.003, tax_rate=0.2):
+    def __init__(self, train_data, test_data, initial_cash=1_00_000, tickers=[], transaction_cost=0.003, tax_rate=0.2):
         """
         Initialize the strategy with training and testing data.
 
@@ -22,14 +22,14 @@ class BaseStrategy:
         test_data (pd.DataFrame): Testing data with multi-level index (Ticker, Date).
         initial_cash (float): Initial cash for trading.
         tickers (list): List of tickers to consider.
-        transcation_cost (float): Transaction cost rate.
+        transaction_cost (float): Transaction cost rate.
         tax_rate (float): Tax rate on profits.
         """
         self.train_data = train_data
         self.test_data = test_data
         self.initial_cash = initial_cash
         self.tickers = tickers
-        self.transaction_cost = transcation_cost
+        self.transaction_cost = transaction_cost
         self.tax_rate = tax_rate
         self.position = {ticker: 0 for ticker in tickers}
         self.cash = initial_cash
@@ -104,6 +104,10 @@ class BaseStrategy:
         dates = self.train_dates if train else self.test_dates
 
         for current_date in dates:
+            if self.portfolio_value <= 0:
+                print("Portfolio value has dropped to zero or below.")
+                print("Declaring bankruptcy and stopping strategy execution.")
+                break
             daily_data = data.xs(current_date, level=0)
 
             trades = []
