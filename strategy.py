@@ -603,7 +603,7 @@ class BaseStrategy:
                     total_pnl = 0
 
                     while remaining_quantity > 0 and entries:
-                        entry = entries
+                        entry = entries[0]
                         entry_quantity = min(remaining_quantity, entry['quantity'])
 
                         pnl = (price - entry['entry_price']) * entry_quantity
@@ -615,7 +615,7 @@ class BaseStrategy:
                         if entry['quantity'] <= remaining_quantity:
                             entries.pop(0)
                         else:
-                            entry['quantity'] -= remaining_quantity
+                            entry['quantity'] -= entry_quantity
 
                     all_trades.append(total_pnl)
 
