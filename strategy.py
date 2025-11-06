@@ -407,6 +407,9 @@ class BaseStrategy:
         print(f"Total Return: {ret:.2f}%")
         print("Tax paid during the strategy execution:", self.tax_paid)
         print("Transaction costs incurred during the strategy execution:", self.transaction_costs_paid)
+        # No. of trades
+        num_trades = sum([len(trade_list) for trade_list in self.history['Trades']])
+        print("Total number of trades executed:", num_trades)
 
 class ExampleStrategy(BaseStrategy):
     """
