@@ -647,6 +647,8 @@ class BaseStrategy:
             dict: Dictionary containing streak metrics.
         """
 
+        df = df.copy()
+
         daily_pnl = df['Portfolio Value'].diff().fillna(0)
 
         win_days = (daily_pnl > 0).astype(int)
@@ -686,6 +688,50 @@ class BaseStrategy:
             'Number of Loss Streaks': num_loss_streaks
         }
 
+    def _calculate_portfolio_metrics(self, df):
+        """
+        Calculate all portfolio metrics.
+        Parameters:
+            df (pd.DataFrame): DataFrame containing portfolio values over time.
+        Returns:
+            dict: Dictionary containing all portfolio metrics.
+        """
+
+        df = df.copy()
+
+        avg_portfolio_value = df['Portfolio Value'].mean()
+        final_portfolio_value = df['Portfolio Value'].iloc[-1]
+        avg_cash = df['Cash'].mean()
+
+        total_positions = 0
+        position_count = 0
+
+        for positions in df['Positions']:
+            for ticker, qty in positions.items():
+                if qty > 0:
+                    total_positions += qty
+                    position_count += 1
+
+        position_count = len(df['Positions'])
+        avg_num_positions = total_positions / position_count if position_count > 0 else 0
+
+        total_trade_value = 0
+
+        for trades in df['Trades']:
+            for trade in trades:
+                ticker, action, quantity, price = trade
+                total_trade_value += quantity * price
+
+        portfolio_turnover = total_trade_value / avg_portfolio_value if avg_portfolio_value > 0 else np.nan
+
+        return {
+            'Average Portfolio Value': avg_portfolio_value,
+            'Final Portfolio Value': final_portfolio_value,
+            'Average Cash': avg_cash,
+            'Average Number of Positions': avg_num_positions,
+            'Portfolio Turnover': portfolio_turnover
+        }
+
     def calculate_performance_metrics(self):
         """
         Calculate performance metrics for the strategy.
@@ -704,6 +750,7 @@ class BaseStrategy:
         metrics['Risk-Adjusted Performance'] = self._calculate_risk_adjusted_metrics(df)
         metrics['Trade Statistics'] = self._calculate_trade_statistics(df)
         metrics['Streaks'] = self._calculate_streak_metrics(df)
+        metrics['Portfolio'] = self._calculate_portfolio_metrics(df)
 
 
 
