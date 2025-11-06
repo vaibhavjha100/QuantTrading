@@ -408,14 +408,23 @@ class BaseStrategy:
         """
         Print a summary of the strategy execution.
         """
-        print("Final Portfolio Value:", self.portfolio_value)
-        ret = (self.portfolio_value - self.initial_cash) / self.initial_cash * 100
-        print(f"Total Return: {ret:.2f}%")
-        print("Tax paid during the strategy execution:", self.tax_paid)
-        print("Transaction costs incurred during the strategy execution:", self.transaction_costs_paid)
-        # No. of trades
-        num_trades = sum([len(trade_list) for trade_list in self.history['Trades']])
-        print("Total number of trades executed:", num_trades)
+        metrics = self.calculate_performance_metrics()
+
+        print("\n" + "=" * 80)
+        print(" " * 20 + "STRATEGY PERFORMANCE REPORT")
+        print("=" * 80)
+
+        for category, stats in metrics.items():
+            print(f"\n--- {category} ---")
+            for stat_name, value in stats.items():
+                if isinstance(value, float):
+                    print(f"{stat_name}: {value:,.4f}")
+                else:
+                    print(f"{stat_name}: {value}")
+
+        print("\n" + "=" * 80)
+
+
 
     def _get_portfolio(self):
         """
@@ -819,6 +828,8 @@ class BaseStrategy:
         metrics['Portfolio'] = self._calculate_portfolio_metrics(df)
         metrics['Costs & Taxes'] = self._calculate_cost_tax_metrics(df)
         metrics['Benchmark Comparison'] = self._calculate_benchmark_metrics(df, benchmark)
+
+        self.performance_metrics = metrics
 
 
 
