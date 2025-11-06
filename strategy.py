@@ -549,14 +549,94 @@ class BaseStrategy:
         max_drawdown = risk_metrics['Max Drawdown']
         calmar_ratio = annualized_return / abs(max_drawdown) if max_drawdown != 0 else np.nan
 
+        trade_stats = self._calculate_trade_statistics(df)
+        win_rate = trade_stats['Win Rate'] if 'Win Rate' in trade_stats else np.nan
+        avg_win = trade_stats['Average Win'] if 'Average Win' in trade_stats else np.nan
+        avg_loss = trade_stats['Average Loss'] if 'Average Loss' in trade_stats else np.nan
+        avg_loss = abs(avg_loss) if not np.isnan(avg_loss) else np.nan
+
+        expectency = (win_rate * avg_win) - ((1 - win_rate) * avg_loss) if not np.isnan(win_rate) and not np.isnan(
+            avg_win) and not np.isnan(avg_loss) else np.nan
+
         return {
             'Sharpe Ratio': sharpe_ratio,
             'Sortino Ratio': sortino_ratio,
-            'Calmar Ratio': calmar_ratio
+            'Calmar Ratio': calmar_ratio,
+            'Expectency': expectency
         }
 
+    def _calculate_trade_statistics(self, df):
+        """
+        Calculate trade statistics for the strategy.
+        Parameters:
+            df (pd.DataFrame): DataFrame containing portfolio values over time.
+        Returns:
+            dict: Dictionary containing trade statistics.
+        """
+        all_trades = []
+        trade_durations = []
+        trade_entry_dates = {}
 
+        for idx, trades in enumerate(self.history['Trades']):
+            current_date = self.history['Date'][idx]
+            for trade in trades:
+                ticker, action, quantity, price = trade
 
+                if action == 'BUY':
+                    if ticker not in trade_entry_dates:
+                        trade_entry_dates[ticker] = []
+                    trade_entry_dates[ticker].append({'entry_date': current_date, 'quantity': quantity, 'entry_price': price})
+
+                elif action == 'SELL' and ticker in trade_entry_dates and trade_entry_dates[ticker]:
+                    entries = trade_entry_dates[ticker]
+                    remaining_quantity = quantity
+                    total_pnl = 0
+
+                    while remaining_quantity > 0 and entries:
+                        entry = entries
+                        entry_quantity = min(remaining_quantity, entry['quantity'])
+
+                        pnl = (price - entry['entry_price']) * entry_quantity
+                        total_pnl += pnl
+
+                        duration = (current_date - entry['entry_date']).days
+                        trade_durations.append(duration)
+
+                        if entry['quantity'] <= remaining_quantity:
+                            entries.pop(0)
+                        else:
+                            entry['quantity'] -= remaining_quantity
+
+                    all_trades.append(total_pnl)
+
+        num_trades = len(all_trades)
+
+        winning_trades = [trade for trade in all_trades if trade > 0]
+        losing_trades = [trade for trade in all_trades if trade <= 0]
+
+        num_wins = len(winning_trades)
+        num_losses = len(losing_trades)
+
+        win_rate = num_wins / num_trades if num_trades > 0 else np.nan
+        avg_win = np.mean(winning_trades) if num_wins > 0 else np.nan
+        avg_loss = np.mean(losing_trades) if num_losses > 0 else np.nan
+        largest_win = np.max(winning_trades) if num_wins > 0 else np.nan
+        largest_loss = np.min(losing_trades) if num_losses > 0 else np
+        avg_trade = np.mean(all_trades) if num_trades > 0 else np.nan
+        avg_duration = np.mean(trade_durations) if trade_durations else np.nan
+
+        return {
+            'Number of Trades': num_trades,
+            'Number of Winning Trades': num_wins,
+            'Number of Losing Trades': num_losses,
+            'Win Rate': win_rate,
+            'Average Win': avg_win,
+            'Average Loss': avg_loss,
+            'Largest Win': largest_win,
+            'Largest Loss': largest_loss,
+            'Average Trade P&L': avg_trade,
+            'Average Trade Duration (days)': avg_duration
+        }
 
     def calculate_performance_metrics(self):
         """
