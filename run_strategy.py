@@ -17,7 +17,7 @@ if __name__ == "__main__":
 
     # Split data into training and testing sets
     train_df, test_df = utils.split_data(df, split_ratio=0.8)
-    benchmark_df = pd.read_csv("benchmark_data.csv.csv", index_col=0, parse_dates=True)
+    benchmark_df = pd.read_csv("benchmark_data.csv", index_col=0, parse_dates=True)
 
     logger.info(f"Training data shape: {train_df.shape}")
     logger.info(f"Testing data shape: {test_df.shape}")
