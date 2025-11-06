@@ -115,7 +115,7 @@ def get_benchmark_data(benchmark_ticker, start_date, end_date, interval="1d"):
     Saves the data to 'benchmark_data.csv'.
     """
     print(f"Fetching benchmark data for {benchmark_ticker}...")
-    benchmark_data = yf.download(benchmark_ticker, start=start_date, end=end_date, interval=interval)
+    benchmark_data = yf.download(benchmark_ticker, start=start_date, end=end_date, interval=interval, multi_level_index=False)
 
     # Drop Adjusted Close if exists
     if 'Adj Close' in benchmark_data.columns:
