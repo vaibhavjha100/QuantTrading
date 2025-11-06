@@ -815,8 +815,8 @@ class BaseStrategy:
         df = self.portfolio.copy()
         benchmark = self.benchmark
 
-        df['Returns'] = df['Portfolio Value'].pct_change().fillna(0, inplace=True)
-        benchmark['Returns'] = benchmark['Close'].pct_change().fillna(0, inplace=True)
+        df['Returns'] = df['Portfolio Value'].pct_change().fillna(0)
+        benchmark['Returns'] = benchmark['Close'].pct_change().fillna(0)
 
         metrics = {}
 
