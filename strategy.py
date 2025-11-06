@@ -408,7 +408,9 @@ class BaseStrategy:
         """
         Print a summary of the strategy execution.
         """
-        metrics = self.calculate_performance_metrics()
+        self.calculate_performance_metrics()
+
+        metrics = self.performance_metrics
 
         print("\n" + "=" * 80)
         print(" " * 20 + "STRATEGY PERFORMANCE REPORT")
