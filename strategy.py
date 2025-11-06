@@ -732,6 +732,31 @@ class BaseStrategy:
             'Portfolio Turnover': portfolio_turnover
         }
 
+    def _calculate_cost_tax_metrics(self, df):
+        """
+        Calculate cost and tax metrics for the strategy.
+        Parameters:
+            df (pd.DataFrame): DataFrame containing portfolio values over time.
+        Returns:
+            dict: Dictionary containing cost and tax metrics.
+        """
+        total_ret_pct = (self.portfolio_value - self.initial_cash) / self.initial_cash * 100
+
+        # Transaction Costs as % of Returns
+        if total_ret_pct != 0:
+            transaction_costs_pct_of_returns = (self.transaction_costs_paid / self.initial_cash) / (total_ret_pct / 100) * 100
+            tax_pct_of_returns = (self.tax_paid / self.initial_cash) / (total_ret_pct / 100) * 100
+        else:
+            transaction_costs_pct_of_returns = 0
+            tax_pct_of_returns = 0
+
+        return {
+            'Total Transaction Costs Paid': self.transaction_costs_paid,
+            'Total Tax Paid': self.tax_paid,
+            'Transaction Costs as % of Returns': transaction_costs_pct_of_returns,
+            'Tax as % of Returns': tax_pct_of_returns
+        }
+
     def calculate_performance_metrics(self):
         """
         Calculate performance metrics for the strategy.
@@ -751,6 +776,7 @@ class BaseStrategy:
         metrics['Trade Statistics'] = self._calculate_trade_statistics(df)
         metrics['Streaks'] = self._calculate_streak_metrics(df)
         metrics['Portfolio'] = self._calculate_portfolio_metrics(df)
+        metrics['Costs & Taxes'] = self._calculate_cost_tax_metrics(df)
 
 
 
