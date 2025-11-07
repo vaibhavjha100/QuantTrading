@@ -412,7 +412,7 @@ class BaseStrategy:
         """
         Print a summary of the strategy execution.
         """
-        self.calculate_performance_metrics()
+        # self.calculate_performance_metrics()
 
         metrics = self.performance_metrics
 
@@ -845,6 +845,19 @@ class BaseStrategy:
         Export the created object in a pickle file after running the strategy, getting the portfolio and calculating performance metrics.
         Save the pickele file in the 'results' directory with the strategy name.
         """
+
+        # Execute strategy if not already done
+        if not self.history['Date']:
+            self.execute_strategy()
+
+        # Get portfolio if not already done
+        if not hasattr(self, 'portfolio'):
+            self._get_portfolio()
+
+        # Calculate performance metrics if not already done
+        if not hasattr(self, 'performance_metrics'):
+            self.calculate_performance_metrics()
+
         file_path = "results/"
         strategy_dir = os.path.join(os.path.dirname(file_path), self.name)
 
