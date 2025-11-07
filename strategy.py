@@ -7,6 +7,7 @@ import pandas as pd
 import utils
 import random
 import plotly.graph_objects as go
+import os
 
 class BaseStrategy:
     """
@@ -57,6 +58,8 @@ class BaseStrategy:
 
         self.indicators = []
         self.benchmark = benchmark
+
+        self.name = ''
 
         self.history = {
             'Date' : [],
@@ -835,6 +838,82 @@ class BaseStrategy:
         metrics['Benchmark Comparison'] = self._calculate_benchmark_metrics(df, benchmark)
 
         self.performance_metrics = metrics
+
+    def export_results(self):
+        """
+        Export the strategy results and performance metrics to a CSV file.
+
+        """
+
+        if not hasattr(self, 'portfolio'):
+            self._get_portfolio()
+
+        file_path = "results/"
+
+        df = self.portfolio.copy()
+        metrics = self.performance_metrics
+
+        # Make results directory if it doesn't exist
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+        # Make a directory with self.name if it doesn't exist
+        strategy_dir = os.path.join(os.path.dirname(file_path), self.name)
+        os.makedirs(strategy_dir, exist_ok=True)
+
+        # Save portfolio history
+        portfolio_file = os.path.join(strategy_dir, f'{self.name}_portfolio_history.csv')
+
+        df.to_csv(portfolio_file)
+
+        # Save performance metrics
+        metrics_file = os.path.join(strategy_dir, f'{self.name}_performance_metrics.csv')
+
+        with open(metrics_file, 'w') as f:
+            for category, stats in metrics.items():
+                f.write(f'--- {category} ---\n')
+                for stat_name, value in stats.items():
+                    f.write(f'{stat_name},{value}\n')
+                f.write('\n')
+
+    def load_results(self):
+        """
+        Load the strategy results and performance metrics from CSV files.
+        Returns:
+            portfolio (pd.DataFrame): DataFrame containing portfolio history.
+            performance_metrics (dict): Dictionary containing performance metrics.
+        """
+
+        file_path = "results/"
+        strategy_dir = os.path.join(os.path.dirname(file_path), self.name)
+
+        portfolio_file = os.path.join(strategy_dir, f'{self.name}_portfolio_history.csv')
+        metrics_file = os.path.join(strategy_dir, f'{self.name}_performance_metrics.csv')
+
+        # Load portfolio history
+        portfolio = pd.read_csv(portfolio_file, index_col='Date', parse_dates=True)
+
+        # Load performance metrics
+        performance_metrics = {}
+        current_category = None
+
+        with open(metrics_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith('---') and line.endswith('---'):
+                    current_category = line.strip('- ').strip()
+                    performance_metrics[current_category] = {}
+                elif line:
+                    stat_name, value = line.split(',', 1)
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        pass
+                    performance_metrics[current_category][stat_name] = value
+
+        return portfolio, performance_metrics
+
+
+
 
 
 
