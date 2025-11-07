@@ -2,13 +2,14 @@
 Module to run a specified trading strategy using the strategy module.
 """
 
-from strategy import ExampleStrategy
 import logging
 import pandas as pd
 import utils
 import numpy
 import warnings
 warnings.filterwarnings("ignore")
+import os
+import importlib
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -24,14 +25,18 @@ if __name__ == "__main__":
     logger.info(f"Training data shape: {train_df.shape}")
     logger.info(f"Testing data shape: {test_df.shape}")
 
-    ES = ExampleStrategy(train_df, test_df, tickers=["ABB.NS", "MPHASIS.NS"], benchmark=benchmark_df)
+    tickers = ["ABB.NS", "MPHASIS.NS"]
+    strategies_dir = "strategies"
 
-    ES.execute_strategy()
+    # Get all filenames in strategies directory
+    strategy_files = [f for f in os.listdir(strategies_dir) if f.endswith(".py")]
 
-    logger.info("Strategy execution completed.")
+    # Remove .py extension to get module names
+    strategy_modules = [os.path.splitext(f)[0] for f in strategy_files]
 
-    ES.print_summary()
-
-    ES.indicators = ["SMA10", "RSI14"]
-
-    ES.plot_candlestick("ABB.NS", start_date="2015-01-01", end_date="2015-03-31")
+    for module_name in strategy_modules:
+        module = importlib.import_module(f"{strategies_dir}.{module_name}")
+        strategy_class = getattr(module, module_name)
+        strat = strategy_class(train_df, test_df, tickers=tickers, benchmark=benchmark_df)
+        strat.name = module_name
+        strat.export_results()
