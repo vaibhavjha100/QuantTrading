@@ -413,27 +413,6 @@ def add_execution_price(df, spread_coeff=0.1, sigma_noise=0.005):
 
     return df
 
-def preprocess_benchmark(df, index):
-    """
-    Preprocess benchmark DataFrame by aligning index with date part of features index.
-    Args:
-        df (pd.DataFrame): DataFrame with OHLCV data for benchmark.
-        index (pd.Index): Index to align with.
-    Returns:
-        pd.DataFrame: DataFrame with aligned index.
-    """
-    df = df.copy()
-
-    if isinstance(df.index, pd.MultiIndex):
-        df.index = df.index.get_level_values(-1)
-
-    df.index = pd.to_datetime(df.index).date
-    df = df.loc[df.index.isin(index.get_level_values('Date'))]
-    df.sort_index(inplace=True)
-    # Save to benchmark_data.csv
-    df.to_csv('benchmark_data.csv')
-    return df
-
 def get_features(file_path):
     """
     Load OHLCV data and add technical indicators and execution price.
@@ -471,7 +450,5 @@ def get_features(file_path):
 if __name__ == "__main__":
 
     features_df = get_features("ohlcv_data.csv")
-    benchmark_df = pd.read_csv("benchmark_data.csv", index_col=0, parse_dates=True)
-    benchmark_df = preprocess_benchmark(benchmark_df, features_df.index)
     print(features_df.head())
     print(features_df.info())
