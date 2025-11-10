@@ -2,8 +2,11 @@
 Simple RSI (Relative Strength Index) Strategy Implementation
 with a 14-period lookback.
 
-This strategy buys when the RSI drops below 30 (indicating oversold conditions)
-and sells when the RSI rises above 70 (indicating overbought conditions).
+Version: 0.0.0
+
+Buy: When RSI < 30
+Sell: When RSI > 70
+Hold: Otherwise
 
 The class inherits from BaseStrategy and implements the get_trade_signal method.
 """
