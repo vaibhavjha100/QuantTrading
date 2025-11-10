@@ -859,7 +859,7 @@ class BaseStrategy:
             self.calculate_performance_metrics()
 
         file_path = "results/"
-        strategy_dir = os.path.join(os.path.dirname(file_path), self.name)
+        strategy_dir = os.path.dirname(file_path)
 
         if not os.path.exists(strategy_dir):
             os.makedirs(strategy_dir)
