@@ -35,8 +35,17 @@ if __name__ == "__main__":
     strategy_modules = [os.path.splitext(f)[0] for f in strategy_files]
 
     for module_name in strategy_modules:
+        # Check if module_name.pkl already exists in results directory
+        # If it exists, skip to the next module
+        result_file = f"results/{module_name}.pkl"
+        if os.path.exists(result_file):
+            logger.info(f"Results for {module_name} already exist. Skipping...")
+            continue
+
+
         module = importlib.import_module(f"{strategies_dir}.{module_name}")
         strategy_class = getattr(module, module_name)
         strat = strategy_class(train_df, test_df, tickers=tickers, benchmark=benchmark_df)
         strat.name = module_name
         strat.export_results()
+        logger.info(f"Completed strategy: {module_name}")
