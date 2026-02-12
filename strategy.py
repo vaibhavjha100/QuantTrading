@@ -879,7 +879,7 @@ class BaseStrategy:
             Strategy object: Loaded strategy object.
         """
         file_path = "results/"
-        strategy_dir = os.path.join(os.path.dirname(file_path), self.name)
+        strategy_dir = os.path.join(os.path.dirname(file_path))
         pickle_file = os.path.join(strategy_dir, f'{self.name}.pkl')
 
         if not os.path.exists(pickle_file):
