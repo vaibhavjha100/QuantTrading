@@ -20,8 +20,8 @@ class BaseStrategy:
         Initialize the strategy with training and testing data.
 
         Parameters:
-        train_data (pd.DataFrame): Training data with multi-level index (Ticker, Date).
-        test_data (pd.DataFrame): Testing data with multi-level index (Ticker, Date).
+        train_data (pd.DataFrame): Training data with multi-level index (Date, Ticker).
+        test_data (pd.DataFrame): Testing data with multi-level index (Date, Ticker).
         initial_cash (float): Initial cash for trading.
         tickers (list): List of tickers to consider.
         transaction_cost (float): Transaction cost rate.
