@@ -412,7 +412,8 @@ class BaseStrategy:
         """
         Print a summary of the strategy execution.
         """
-        # self.calculate_performance_metrics()
+        if not hasattr(self, "performance_metrics"):
+            self.calculate_performance_metrics()
 
         metrics = self.performance_metrics
 
