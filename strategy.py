@@ -129,7 +129,7 @@ class BaseStrategy:
                 # Make sure that there is no lookahead bias by only using data up to the current date
                 # Data should only be for the ticker in this iteration
                 ticker_data = data.xs(ticker, level=1)
-                ticker_data_slice = ticker_data[ticker_data.index <= current_date]
+                ticker_data_slice = ticker_data[ticker_data.index < current_date]
 
                 # Call the get_trade_signal method to get the trade signal
                 signal = self.get_trade_signal(ticker_data_slice)
