@@ -841,15 +841,17 @@ class BaseStrategy:
 
         self.performance_metrics = metrics
 
-    def export_results(self):
+    def export_results(self, train=True):
         """
+        Parameters:
+            train (bool): If True, export results for training data; otherwise, for testing data
         Export the created object in a pickle file after running the strategy, getting the portfolio and calculating performance metrics.
         Save the pickele file in the 'results' directory with the strategy name.
         """
 
         # Execute strategy if not already done
         if not self.history['Date']:
-            self.execute_strategy()
+            self.execute_strategy(train=train)
 
         # Get portfolio if not already done
         if not hasattr(self, 'portfolio'):
@@ -865,7 +867,10 @@ class BaseStrategy:
             print("Warning: No trades executed. Skipping export of results as performance metrics would not be meaningful.")
             return
 
-        file_path = "results/"
+        if train==True:
+            file_path = "results/"
+        else:
+            file_path = "tests/"
         strategy_dir = os.path.dirname(file_path)
 
         if not os.path.exists(strategy_dir):
@@ -878,14 +883,19 @@ class BaseStrategy:
             pickle.dump(self, f)
 
 
-    def load_results(self):
+    def load_results(self, train=True):
         """
+        Parameters:
+            train (bool): If True, load results for training data; otherwise, for testing data
         Load the object from a pickle file.
         Load the pickele file from the 'results' directory with the strategy name.
         Returns:
             Strategy object: Loaded strategy object.
         """
-        file_path = "results/"
+        if train==True:
+            file_path = "results/"
+        else:
+            file_path = "tests/"
         strategy_dir = os.path.join(os.path.dirname(file_path))
         pickle_file = os.path.join(strategy_dir, f'{self.name}.pkl')
 
