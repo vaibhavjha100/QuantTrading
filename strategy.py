@@ -859,6 +859,12 @@ class BaseStrategy:
         if not hasattr(self, 'performance_metrics'):
             self.calculate_performance_metrics()
 
+        # If no trade history, log a warning and skip exporting results, as the performance metrics would not be meaningful without any trades executed.
+        # We can gauge no trade history from self.performance_metrics['Trade Statistics']['Number of Trades'] == 0
+        if self.performance_metrics['Trade Statistics']['Number of Trades'] == 0:
+            print("Warning: No trades executed. Skipping export of results as performance metrics would not be meaningful.")
+            return
+
         file_path = "results/"
         strategy_dir = os.path.dirname(file_path)
 
